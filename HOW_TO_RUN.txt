@@ -1,46 +1,27 @@
 ================================================================================
-                    AI BEATS - QUICK COMMAND CHEAT SHEET
+                    AI BEATS - 1-CLICK COMMAND CHEAT SHEET
 ================================================================================
 
-EVERY TIME you open Command Prompt, copy and paste this exact command first
-so you are in the correct folder:
+YOU DO NOT NEED TO TYPE ANY COMMANDS MANUALLY ANYMORE!
 
-cd "C:\Users\20225074\OneDrive - TU Eindhoven\Desktop\Other\Coding\AntiGravity\MusicAI"
+Inside your folder:
+C:\Users\20225074\OneDrive - TU Eindhoven\Desktop\Other\Coding\AntiGravity\MusicAI
 
---------------------------------------------------------------------------------
-1. TO START THE APP (PLAY MUSIC ON YOUR COMPUTER & PHONE)
---------------------------------------------------------------------------------
-Type:
-npm run dev
-
-Then:
-- On your computer: Open http://localhost:5173
-- On your phone (same Wi-Fi): Open the Network link shown in the terminal
-  (e.g., http://192.168.x.x:5173).
-
-To stop the server: Press Ctrl + C in the command window.
+You now have two 1-click programs:
 
 --------------------------------------------------------------------------------
-2. WHEN YOU ADD NEW MP3 SONGS (NEXT MONTH)
+1. UPDATE_AND_PUBLISH_SONGS.bat (The 1-Click Publisher)
 --------------------------------------------------------------------------------
-Step 1: Drop your new .mp3 files into:
-        C:\Users\20225074\OneDrive - TU Eindhoven\Desktop\Other\Coding\AntiGravity\MusicAI\public\audio
-
-Step 2: In Command Prompt (inside the folder), run:
-        npm run sync
-
-This automatically updates your song list and extracts the exact duration.
+Whenever you create new MP3 songs:
+1. Drop your new .mp3 files into the "public\audio\" folder.
+2. Double-click "UPDATE_AND_PUBLISH_SONGS.bat".
+3. That's it! It automatically calculates durations, uploads to GitHub,
+   and deploys to Vercel so you and your friends get the new songs in ~30s.
 
 --------------------------------------------------------------------------------
-3. TO PUSH TO GITHUB (SO IT DEPLOYS FOR ALL YOUR FRIENDS ON VERCEL)
+2. START_PLAYER_LOCALLY.bat
 --------------------------------------------------------------------------------
-Whenever you want to publish your latest music to your GitHub repository:
-(https://github.com/virtuallypassedsmartsparrow/my-ai-music)
-
-Run:
-git add .
-git commit -m "Update AI music library"
-git push -u origin main
-
-(A browser window may pop up once asking you to log into GitHub to authorize).
+If you ever want to preview and listen to your songs locally on your PC:
+- Double-click "START_PLAYER_LOCALLY.bat".
+- It launches the local server without needing to type anything in CMD!
 ================================================================================
