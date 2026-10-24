@@ -1,21 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { usePlayer } from '../context/PlayerContext';
-import type { Song } from '../types';
-import { formatTime, formatDate } from '../utils/format';
+import { formatTime } from '../utils/format';
 import {
   Play,
   Pause,
   Search,
   X,
-  Clock,
   ArrowUpDown,
-  Download,
-  Share2,
   Disc3,
-  Calendar,
   Shuffle,
-  CheckCircle2,
-  HardDriveDownload
+  CheckCircle2
 } from 'lucide-react';
 
 export const SongList: React.FC = () => {
@@ -25,8 +19,7 @@ export const SongList: React.FC = () => {
     isPlaying,
     playSong,
     toggleShuffle,
-    offlineIds,
-    toggleSongOffline
+    offlineIds
   } = usePlayer();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -62,41 +55,6 @@ export const SongList: React.FC = () => {
 
     return result;
   }, [songs, searchTerm, sortBy]);
-
-  const handleShare = async (e: React.MouseEvent, song: Song) => {
-    e.stopPropagation();
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: song.title,
-          text: `Check out "${song.title}" on AI Beats!`,
-          url: window.location.href
-        });
-      } catch {
-        // cancelled
-      }
-    } else {
-      await navigator.clipboard.writeText(window.location.href);
-      alert('Link copied to clipboard!');
-    }
-  };
-
-  const handleDownloadMp3 = (e: React.MouseEvent, song: Song) => {
-    e.stopPropagation();
-    const link = document.createElement('a');
-    link.href = song.url;
-    link.download = `${song.title}.mp3`;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleToggleOffline = async (e: React.MouseEvent, song: Song) => {
-    e.stopPropagation();
-    await toggleSongOffline(song);
-  };
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-4 pb-36">
@@ -159,9 +117,7 @@ export const SongList: React.FC = () => {
           <Disc3 className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
           <p className="text-sm font-semibold text-zinc-300 mb-1">No songs found</p>
           <p className="text-xs text-zinc-500 max-w-sm mx-auto">
-            {searchTerm
-              ? 'No tracks matching that search.'
-              : 'Drop your .mp3 files into public/audio/ and run npm run sync, or use the lock icon to upload!'}
+            {searchTerm ? 'No tracks matching that search.' : 'Drop your .mp3 files into public/audio/ and run UPDATE_AND_PUBLISH_SONGS.bat'}
           </p>
         </div>
       ) : (
@@ -181,144 +137,80 @@ export const SongList: React.FC = () => {
                     : 'swish-card hover:border-zinc-700 hover:bg-[#18181c]'
                 }`}
               >
-                {/* Left: Thumbnail & Song Info */}
-                <div className="flex items-center space-x-3.5 min-w-0 pr-2 flex-1">
-                  {/* Track Number / Artwork / Equalizer */}
-                  <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 bg-zinc-900 border border-white/10 shadow-md">
-                    {song.coverUrl ? (
-                      <img
-                        src={song.coverUrl}
-                        alt={song.title}
-                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-[#18181b] flex flex-col items-center justify-center">
-                        <span className="text-[11px] font-mono font-bold text-zinc-400">
-                          #{index + 1}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Animated Equalizer Overlay when playing */}
-                    <div
-                      className={`absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-[1px] transition-opacity ${
-                        isCurrent ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                      }`}
-                    >
-                      {isCurrentPlaying ? (
-                        <div className="flex items-end space-x-1 h-5">
-                          <span className="w-1 bg-white rounded-full equalizer-bar-1" />
-                          <span className="w-1 bg-zinc-300 rounded-full equalizer-bar-2" />
-                          <span className="w-1 bg-white rounded-full equalizer-bar-3" />
-                          <span className="w-1 bg-zinc-400 rounded-full equalizer-bar-4" />
-                        </div>
-                      ) : (
-                        <Play className="w-4 h-4 text-white fill-white ml-0.5" />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Title & Artist & Offline Badge */}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center space-x-2">
-                      <h3
-                        className={`text-sm font-semibold truncate tracking-tight ${
-                          isCurrent ? 'text-white' : 'text-zinc-200'
-                        }`}
-                      >
-                        {song.title}
-                      </h3>
-                      {isOffline && (
-                        <span
-                          className="flex items-center text-[10px] font-semibold px-1.5 py-0.2 rounded-md bg-zinc-800 text-zinc-300 border border-zinc-700 shrink-0"
-                          title="Downloaded to phone storage (no data needed)"
-                        >
-                          <CheckCircle2 className="w-2.5 h-2.5 mr-1 text-zinc-300" />
-                          Saved
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center text-xs text-zinc-400 space-x-2 mt-0.5">
-                      <span className="truncate text-zinc-400 font-medium">
-                        {song.artist || 'AI Music'}
+                {/* Left: Artwork / Track Number */}
+                <div className="relative w-11 h-11 rounded-xl overflow-hidden shrink-0 bg-zinc-900 border border-white/10 shadow-sm mr-3">
+                  {song.coverUrl ? (
+                    <img
+                      src={song.coverUrl}
+                      alt={song.title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-[#18181b] flex items-center justify-center">
+                      <span className="text-xs font-mono font-bold text-zinc-400">
+                        #{index + 1}
                       </span>
-                      {song.createdAt && (
-                        <>
-                          <span className="text-zinc-600">•</span>
-                          <span className="flex items-center text-[11px] text-zinc-500 shrink-0">
-                            <Calendar className="w-3 h-3 mr-1 opacity-70" />
-                            {formatDate(song.createdAt)}
-                          </span>
-                        </>
-                      )}
                     </div>
-                  </div>
-                </div>
-
-                {/* Right: Actions & Duration */}
-                <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
-                  {song.duration > 0 && (
-                    <span className="text-xs font-mono text-zinc-400 hidden sm:flex items-center mr-1">
-                      <Clock className="w-3 h-3 mr-1 text-zinc-500" />
-                      {formatTime(song.duration)}
-                    </span>
                   )}
 
-                  {/* Offline Cache Toggle */}
-                  <button
-                    onClick={(e) => handleToggleOffline(e, song)}
-                    className={`p-1.5 rounded-lg transition-colors ${
-                      isOffline
-                        ? 'text-white bg-zinc-800'
-                        : 'text-zinc-500 hover:text-white hover:bg-zinc-800'
-                    }`}
-                    title={isOffline ? 'Saved offline (tap to remove)' : 'Save offline to listen without data'}
-                  >
-                    {isOffline ? (
-                      <CheckCircle2 className="w-4 h-4 text-white" />
-                    ) : (
-                      <HardDriveDownload className="w-4 h-4" />
-                    )}
-                  </button>
-
-                  {/* Download MP3 file */}
-                  <button
-                    onClick={(e) => handleDownloadMp3(e, song)}
-                    className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
-                    title="Download MP3 file"
-                  >
-                    <Download className="w-4 h-4" />
-                  </button>
-
-                  {/* Share button */}
-                  <button
-                    onClick={(e) => handleShare(e, song)}
-                    className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
-                    title="Share link"
-                  >
-                    <Share2 className="w-4 h-4" />
-                  </button>
-
-                  {/* Play/Pause Button */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      playSong(song);
-                    }}
-                    className={`p-2.5 rounded-full transition-all ml-1 ${
-                      isCurrentPlaying
-                        ? 'bg-white text-black font-bold shadow-lg shadow-white/10'
-                        : 'bg-zinc-800 text-zinc-200 hover:bg-white hover:text-black'
-                    }`}
-                  >
-                    {isCurrentPlaying ? (
-                      <Pause className="w-3.5 h-3.5 fill-current" />
-                    ) : (
-                      <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
-                    )}
-                  </button>
+                  {/* Equalizer animation when playing */}
+                  {isCurrentPlaying && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-[1px]">
+                      <div className="flex items-end space-x-0.5 h-4">
+                        <span className="w-1 bg-white rounded-full equalizer-bar-1" />
+                        <span className="w-1 bg-zinc-300 rounded-full equalizer-bar-2" />
+                        <span className="w-1 bg-white rounded-full equalizer-bar-3" />
+                      </div>
+                    </div>
+                  )}
                 </div>
+
+                {/* Center: Full Song Title & Metadata (Maximum Width) */}
+                <div className="min-w-0 flex-1 pr-3">
+                  <h3
+                    className={`text-sm font-semibold leading-snug break-words ${
+                      isCurrent ? 'text-white' : 'text-zinc-100'
+                    }`}
+                  >
+                    {song.title}
+                  </h3>
+                  
+                  {/* Subtle Subtitle: Duration + Offline Indicator */}
+                  <div className="flex items-center space-x-2 text-xs text-zinc-400 mt-0.5">
+                    {song.duration > 0 && (
+                      <span className="font-mono text-zinc-400">
+                        {formatTime(song.duration)}
+                      </span>
+                    )}
+                    {isOffline && (
+                      <span className="flex items-center text-[11px] text-zinc-400 font-medium">
+                        <CheckCircle2 className="w-3 h-3 mr-1 text-zinc-300" />
+                        Downloaded
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right: Only the Play/Pause Button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    playSong(song);
+                  }}
+                  className={`p-2.5 rounded-full transition-all shrink-0 ${
+                    isCurrentPlaying
+                      ? 'bg-white text-black font-bold shadow-lg shadow-white/10 scale-105'
+                      : 'bg-zinc-800 text-zinc-200 hover:bg-white hover:text-black'
+                  }`}
+                  aria-label={isCurrentPlaying ? 'Pause' : 'Play'}
+                >
+                  {isCurrentPlaying ? (
+                    <Pause className="w-4 h-4 fill-current" />
+                  ) : (
+                    <Play className="w-4 h-4 fill-current ml-0.5" />
+                  )}
+                </button>
               </div>
             );
           })}

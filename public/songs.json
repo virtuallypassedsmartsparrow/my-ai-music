@@ -30,6 +30,16 @@
     "createdAt": "2026-08-06T15:09:35.431Z"
   },
   {
+    "id": "track-4-mvml1vw3",
+    "title": "Gefeliciteerd Richelle",
+    "artist": "AI Music",
+    "album": "AI Collection",
+    "url": "/audio/Gefeliciteerd%20Richelle.mp3",
+    "coverUrl": "",
+    "duration": 169,
+    "createdAt": "2026-10-24T15:51:26.135Z"
+  },
+  {
     "id": "track-4-mvmiu2pb",
     "title": "Good Girl (Nap Time Funk)",
     "artist": "AI Music",
@@ -138,6 +148,16 @@
     "coverUrl": "",
     "duration": 105,
     "createdAt": "2026-08-06T15:09:36.284Z"
+  },
+  {
+    "id": "track-16-mvml1vw6",
+    "title": "Tom Plays Chess House",
+    "artist": "AI Music",
+    "album": "AI Collection",
+    "url": "/audio/Tom%20Plays%20Chess%20House.mp3",
+    "coverUrl": "",
+    "duration": 152,
+    "createdAt": "2026-10-24T15:50:41.836Z"
   },
   {
     "id": "track-15-mvmiu2pc",
