@@ -2,12 +2,37 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import path from 'path'
+import { execSync } from 'child_process'
+
+function autoSyncMusicPlugin() {
+  return {
+    name: 'auto-sync-music',
+    configureServer(server: any) {
+      const audioPath = path.resolve(import.meta.dirname || process.cwd(), 'public/audio');
+      server.watcher.add(audioPath);
+      const resync = (filePath: string) => {
+        if (filePath.includes('public') && (filePath.includes('audio') || filePath.endsWith('.mp3'))) {
+          try {
+            execSync('node scripts/sync-music.js', { stdio: 'inherit' });
+            server.ws.send({ type: 'full-reload' });
+          } catch (e) {
+            console.error('Auto-sync failed:', e);
+          }
+        }
+      };
+      server.watcher.on('add', resync);
+      server.watcher.on('unlink', resync);
+    }
+  };
+}
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    autoSyncMusicPlugin(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icons/*.png'],

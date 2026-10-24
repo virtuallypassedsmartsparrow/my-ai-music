@@ -1,12 +1,162 @@
 [
   {
-    "id": "song-1",
-    "title": "Neon Dreams (AI Lofi)",
-    "artist": "AI Music Studio",
-    "album": "Synthetic Horizons",
-    "url": "/audio/sample1.wav",
-    "coverUrl": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&auto=format&fit=crop&q=80",
-    "duration": 16,
-    "createdAt": "2026-10-24T12:00:00Z"
+    "id": "track-1-mvmiu2pa",
+    "title": "Aditya's Journey",
+    "artist": "AI Music",
+    "album": "AI Collection",
+    "url": "/audio/Aditya's%20Journey.mp3",
+    "coverUrl": "",
+    "duration": 98,
+    "createdAt": "2026-08-06T15:09:36.097Z"
+  },
+  {
+    "id": "track-2-mvmiu2pa",
+    "title": "Cat Chaser Groove",
+    "artist": "AI Music",
+    "album": "AI Collection",
+    "url": "/audio/Cat%20Chaser%20Groove.mp3",
+    "coverUrl": "",
+    "duration": 103,
+    "createdAt": "2026-08-06T15:00:19.048Z"
+  },
+  {
+    "id": "track-3-mvmiu2pb",
+    "title": "Floating with Ron and Christine",
+    "artist": "AI Music",
+    "album": "AI Collection",
+    "url": "/audio/Floating%20with%20Ron%20and%20Christine.mp3",
+    "coverUrl": "",
+    "duration": 103,
+    "createdAt": "2026-08-06T15:09:35.431Z"
+  },
+  {
+    "id": "track-4-mvmiu2pb",
+    "title": "Good Girl (Nap Time Funk)",
+    "artist": "AI Music",
+    "album": "AI Collection",
+    "url": "/audio/Good%20Girl%20(Nap%20Time%20Funk).mp3",
+    "coverUrl": "",
+    "duration": 103,
+    "createdAt": "2026-08-06T15:00:14.235Z"
+  },
+  {
+    "id": "track-5-mvmiu2pb",
+    "title": "Hallo, Hoe Gaat Het",
+    "artist": "AI Music",
+    "album": "AI Collection",
+    "url": "/audio/Hallo%2C%20Hoe%20Gaat%20Het.mp3",
+    "coverUrl": "",
+    "duration": 108,
+    "createdAt": "2026-08-16T20:30:15.633Z"
+  },
+  {
+    "id": "track-6-mvmiu2pb",
+    "title": "Holes in Underwear",
+    "artist": "AI Music",
+    "album": "AI Collection",
+    "url": "/audio/Holes%20in%20Underwear.mp3",
+    "coverUrl": "",
+    "duration": 122,
+    "createdAt": "2026-08-13T12:55:43.467Z"
+  },
+  {
+    "id": "track-7-mvmiu2pb",
+    "title": "Manoge Will Use A.I. (Electro Mix)",
+    "artist": "AI Music",
+    "album": "AI Collection",
+    "url": "/audio/Manoge%20Will%20Use%20A.I.%20(Electro%20Mix).mp3",
+    "coverUrl": "",
+    "duration": 120,
+    "createdAt": "2026-09-16T09:33:49.328Z"
+  },
+  {
+    "id": "track-8-mvmiu2pb",
+    "title": "Manoj will use A.I.",
+    "artist": "AI Music",
+    "album": "AI Collection",
+    "url": "/audio/Manoj%20will%20use%20A.I..mp3",
+    "coverUrl": "",
+    "duration": 119,
+    "createdAt": "2026-09-16T09:23:34.757Z"
+  },
+  {
+    "id": "track-9-mvmiu2pb",
+    "title": "Tear The Ground",
+    "artist": "AI Music",
+    "album": "AI Collection",
+    "url": "/audio/Tear%20The%20Ground.mp3",
+    "coverUrl": "",
+    "duration": 112,
+    "createdAt": "2026-08-06T15:09:35.933Z"
+  },
+  {
+    "id": "track-10-mvmiu2pc",
+    "title": "The Bravest Waffle Female",
+    "artist": "AI Music",
+    "album": "AI Collection",
+    "url": "/audio/The%20Bravest%20Waffle_Female.mp3",
+    "coverUrl": "",
+    "duration": 108,
+    "createdAt": "2026-08-06T15:00:22.987Z"
+  },
+  {
+    "id": "track-11-mvmiu2pc",
+    "title": "The Bravest Waffle Male",
+    "artist": "AI Music",
+    "album": "AI Collection",
+    "url": "/audio/The%20Bravest%20Waffle_Male.mp3",
+    "coverUrl": "",
+    "duration": 70,
+    "createdAt": "2026-08-06T15:09:36.284Z"
+  },
+  {
+    "id": "track-12-mvmiu2pc",
+    "title": "The Outlaw Martin",
+    "artist": "AI Music",
+    "album": "AI Collection",
+    "url": "/audio/The%20Outlaw%20Martin.mp3",
+    "coverUrl": "",
+    "duration": 119,
+    "createdAt": "2026-08-13T12:55:51.045Z"
+  },
+  {
+    "id": "track-13-mvmiu2pc",
+    "title": "The Troll's Tongue",
+    "artist": "AI Music",
+    "album": "AI Collection",
+    "url": "/audio/The%20Troll's%20Tongue.mp3",
+    "coverUrl": "",
+    "duration": 110,
+    "createdAt": "2026-09-01T09:12:21.281Z"
+  },
+  {
+    "id": "track-14-mvmiu2pc",
+    "title": "Thomas James (Poo Face)",
+    "artist": "AI Music",
+    "album": "AI Collection",
+    "url": "/audio/Thomas%20James%20(Poo%20Face).mp3",
+    "coverUrl": "",
+    "duration": 105,
+    "createdAt": "2026-08-06T15:09:36.284Z"
+  },
+  {
+    "id": "track-15-mvmiu2pc",
+    "title": "Tom Plays Chess",
+    "artist": "AI Music",
+    "album": "AI Collection",
+    "url": "/audio/Tom%20Plays%20Chess.mp3",
+    "coverUrl": "",
+    "duration": 74,
+    "createdAt": "2026-09-24T14:59:31.844Z"
+  },
+  {
+    "id": "track-16-mvmiu2pc",
+    "title": "Too Many Gloves",
+    "artist": "AI Music",
+    "album": "AI Collection",
+    "url": "/audio/Too%20Many%20Gloves.mp3",
+    "coverUrl": "",
+    "duration": 121,
+    "createdAt": "2026-08-13T12:55:09.392Z"
   }
 ]

@@ -82,7 +82,7 @@ export async function fetchAllSongs(): Promise<Song[]> {
   // Fallback: static songs.json + locally added songs
   let baseSongs: Song[] = [];
   try {
-    const res = await fetch('/songs.json', { cache: 'no-store' });
+    const res = await fetch(`/songs.json?t=${Date.now()}`, { cache: 'no-store' });
     if (res.ok) {
       baseSongs = await res.json();
     }
@@ -94,10 +94,9 @@ export async function fetchAllSongs(): Promise<Song[]> {
     const custom = localStorage.getItem(CUSTOM_SONGS_KEY);
     if (custom) {
       const parsed: Song[] = JSON.parse(custom);
-      // Combine custom songs (first) with base songs, avoiding duplicates by id
-      const customIds = new Set(parsed.map(s => s.id));
-      const filteredBase = baseSongs.filter(s => !customIds.has(s.id));
-      return [...parsed, ...filteredBase];
+      const baseUrls = new Set(baseSongs.map(s => s.url));
+      const validCustom = parsed.filter(s => !baseUrls.has(s.url) && !s.url.includes('sample1.wav'));
+      return [...baseSongs, ...validCustom];
     }
   } catch (e) {
     console.warn('Failed to read custom songs from localStorage:', e);
