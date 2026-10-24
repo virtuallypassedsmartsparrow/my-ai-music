@@ -8,8 +8,8 @@
   html, body {
     margin: 0;
     padding: 0;
-    background-color: #090d16;
-    color: #f1f5f9;
+    background-color: #06090e;
+    color: #f8fafc;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -29,35 +29,57 @@
 
 /* Custom sleek scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.6);
+  background: #090e17;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.4);
+  background: #1e293b;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 0.7);
+  background: #06b6d4;
 }
 
-/* Animations */
+/* Flashy Neon Glows & Animations */
+.neon-glow-cyan {
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.35), 0 0 40px rgba(6, 182, 212, 0.15);
+}
+
+.neon-glow-emerald {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.35), 0 0 40px rgba(16, 185, 129, 0.15);
+}
+
+.neon-border-cyan {
+  border-color: rgba(6, 182, 212, 0.6);
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.25), inset 0 0 15px rgba(6, 182, 212, 0.05);
+}
+
 @keyframes pulseSlow {
-  0%, 100% { opacity: 0.3; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.05); }
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.04); }
 }
 
 .animate-pulse-slow {
-  animation: pulseSlow 4s ease-in-out infinite;
+  animation: pulseSlow 3s ease-in-out infinite;
 }
 
-@keyframes spinSlow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+@keyframes equalizerWave {
+  0%, 100% { height: 4px; }
+  50% { height: 16px; }
 }
 
-.animate-spin-slow {
-  animation: spinSlow 20s linear infinite;
+.equalizer-bar-1 {
+  animation: equalizerWave 0.6s ease-in-out infinite;
+}
+.equalizer-bar-2 {
+  animation: equalizerWave 0.8s ease-in-out infinite 0.2s;
+}
+.equalizer-bar-3 {
+  animation: equalizerWave 0.5s ease-in-out infinite 0.4s;
+}
+.equalizer-bar-4 {
+  animation: equalizerWave 0.7s ease-in-out infinite 0.1s;
 }

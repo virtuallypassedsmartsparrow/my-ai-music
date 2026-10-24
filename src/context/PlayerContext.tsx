@@ -1,6 +1,13 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import type { Song, RepeatMode } from '../types';
 import { fetchAllSongs } from '../services/storage';
+import {
+  getOfflineSongIds,
+  cacheSongOffline,
+  removeSongFromCache,
+  getPlayableAudioUrl,
+  cacheAllSongsOffline
+} from '../services/offlineCache';
 
 interface PlayerContextType {
   songs: Song[];
@@ -19,6 +26,8 @@ interface PlayerContextType {
   isInstallOpen: boolean;
   canInstallPwa: boolean;
   isStandalone: boolean;
+  offlineIds: string[];
+  offlineProgress: { isDownloading: boolean; completed: number; total: number };
   
   // Actions
   playSong: (song: Song) => void;
@@ -37,6 +46,8 @@ interface PlayerContextType {
   setInstallOpen: (open: boolean) => void;
   refreshSongList: () => Promise<void>;
   promptPwaInstall: () => Promise<void>;
+  toggleSongOffline: (song: Song) => Promise<void>;
+  downloadAllForOffline: () => Promise<void>;
 }
 
 const PlayerContext = createContext<PlayerContextType | null>(null);
@@ -53,6 +64,14 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isShuffle, setIsShuffle] = useState(false);
   const [repeatMode, setRepeatMode] = useState<RepeatMode>('off');
   
+  // Offline State
+  const [offlineIds, setOfflineIds] = useState<string[]>([]);
+  const [offlineProgress, setOfflineProgress] = useState<{
+    isDownloading: boolean;
+    completed: number;
+    total: number;
+  }>({ isDownloading: false, completed: 0, total: 0 });
+
   // Modals & UI states
   const [isFullPlayerOpen, setFullPlayerOpen] = useState(false);
   const [isAdminOpen, setAdminOpen] = useState(false);
@@ -63,6 +82,11 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isStandalone, setIsStandalone] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Initialize offline list
+  useEffect(() => {
+    setOfflineIds(getOfflineSongIds());
+  }, []);
 
   // Initialize Audio instance
   useEffect(() => {
@@ -89,7 +113,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             position: Math.min(audio.currentTime, audio.duration)
           });
         } catch {
-          // ignore position state sync errors
+          // ignore
         }
       }
     };
@@ -160,13 +184,12 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Current index in list
   const currentIndex = currentSong ? songs.findIndex(s => s.id === currentSong.id) : -1;
 
-  // Play a specific song
-  const playSong = useCallback((song: Song) => {
+  // Play a specific song (offline-aware)
+  const playSong = useCallback(async (song: Song) => {
     if (!audioRef.current) return;
     const audio = audioRef.current;
 
     if (currentSong?.id === song.id) {
-      // Toggle play/pause
       if (audio.paused) {
         audio.play().catch(console.warn);
       } else {
@@ -176,10 +199,13 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     setCurrentSong(song);
-    audio.src = song.url;
+    setIsBuffering(true);
+
+    // Get offline URL if available to save mobile data
+    const playableUrl = await getPlayableAudioUrl(song.url);
+    audio.src = playableUrl;
     audio.currentTime = 0;
     setCurrentTime(0);
-    setIsBuffering(true);
 
     audio.play().catch((err) => {
       console.warn('Autoplay prevented or network error:', err);
@@ -224,7 +250,6 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const prevSong = useCallback(() => {
     if (songs.length === 0) return;
     if (audioRef.current && audioRef.current.currentTime > 3) {
-      // Restart current song if already > 3 seconds in
       audioRef.current.currentTime = 0;
       return;
     }
@@ -232,7 +257,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     playSong(songs[prevIdx]);
   }, [songs, currentIndex, playSong]);
 
-  // Handle song ending according to repeat mode
+  // Handle song ending
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -244,7 +269,6 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       } else if (repeatMode === 'all') {
         nextSong();
       } else {
-        // 'off'
         if (currentIndex < songs.length - 1) {
           nextSong();
         } else {
@@ -300,6 +324,31 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   }, []);
 
+  // Toggle offline cache for single song
+  const toggleSongOffline = useCallback(async (song: Song) => {
+    const isCached = offlineIds.includes(song.id);
+    if (isCached) {
+      await removeSongFromCache(song);
+      setOfflineIds(prev => prev.filter(id => id !== song.id));
+    } else {
+      await cacheSongOffline(song);
+      setOfflineIds(prev => [...prev, song.id]);
+    }
+  }, [offlineIds]);
+
+  // Download all songs for offline listening
+  const downloadAllForOffline = useCallback(async () => {
+    if (songs.length === 0) return;
+    setOfflineProgress({ isDownloading: true, completed: 0, total: songs.length });
+
+    await cacheAllSongsOffline(songs, (done, total) => {
+      setOfflineProgress({ isDownloading: true, completed: done, total });
+    });
+
+    setOfflineIds(getOfflineSongIds());
+    setOfflineProgress({ isDownloading: false, completed: songs.length, total: songs.length });
+  }, [songs]);
+
   // MediaSession API setup
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;
@@ -308,7 +357,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       navigator.mediaSession.metadata = new MediaMetadata({
         title: currentSong.title,
         artist: currentSong.artist,
-        album: currentSong.album || 'AI Beats',
+        album: currentSong.album || 'AI Collection',
         artwork: [
           {
             src: currentSong.coverUrl || '/icons/icon-192.png',
@@ -345,7 +394,6 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
   }, [currentSong, resume, pause, prevSong, nextSong, seekTo]);
 
-  // Prompt PWA install
   const promptPwaInstall = useCallback(async () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
@@ -377,6 +425,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         isInstallOpen,
         canInstallPwa: Boolean(deferredPrompt) || !isStandalone,
         isStandalone,
+        offlineIds,
+        offlineProgress,
         playSong,
         togglePlay,
         pause,
@@ -392,7 +442,9 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setAdminOpen,
         setInstallOpen,
         refreshSongList,
-        promptPwaInstall
+        promptPwaInstall,
+        toggleSongOffline,
+        downloadAllForOffline
       }}
     >
       {children}

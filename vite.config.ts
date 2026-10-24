@@ -15,8 +15,8 @@ export default defineConfig({
         name: 'AI Beats Music Player',
         short_name: 'AI Beats',
         description: 'Stream and discover new AI-generated music tracks',
-        theme_color: '#090d16',
-        background_color: '#090d16',
+        theme_color: '#06090e',
+        background_color: '#06090e',
         display: 'standalone',
         orientation: 'portrait',
         icons: [

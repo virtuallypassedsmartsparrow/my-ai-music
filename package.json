@@ -4,8 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "sync": "node scripts/sync-music.js",
+    "dev": "node scripts/sync-music.js && vite",
+    "build": "node scripts/sync-music.js && tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview"
   },

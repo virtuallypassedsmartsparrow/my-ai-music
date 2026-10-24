@@ -7,40 +7,6 @@
     "url": "/audio/sample1.wav",
     "coverUrl": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&auto=format&fit=crop&q=80",
     "duration": 16,
-    "genre": "Lofi",
     "createdAt": "2026-10-24T12:00:00Z"
-  },
-  {
-    "id": "song-2",
-    "title": "Cybernetic Sunset",
-    "artist": "AI Music Studio",
-    "album": "Synthetic Horizons",
-    "url": "https://cdn.freesound.org/previews/612/612610_5674468-lq.mp3",
-    "coverUrl": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&auto=format&fit=crop&q=80",
-    "duration": 48,
-    "genre": "Synthwave",
-    "createdAt": "2026-10-23T15:30:00Z"
-  },
-  {
-    "id": "song-3",
-    "title": "Quantum Echoes",
-    "artist": "AI Music Studio",
-    "album": "Algorithms & Resonance",
-    "url": "https://cdn.freesound.org/previews/566/566384_11861866-lq.mp3",
-    "coverUrl": "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80",
-    "duration": 52,
-    "genre": "Ambient",
-    "createdAt": "2026-10-22T09:15:00Z"
-  },
-  {
-    "id": "song-4",
-    "title": "Neural Pulse",
-    "artist": "AI Music Studio",
-    "album": "Algorithms & Resonance",
-    "url": "https://cdn.freesound.org/previews/415/415804_5121236-lq.mp3",
-    "coverUrl": "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&auto=format&fit=crop&q=80",
-    "duration": 34,
-    "genre": "Electronic",
-    "createdAt": "2026-10-20T18:40:00Z"
   }
 ]
