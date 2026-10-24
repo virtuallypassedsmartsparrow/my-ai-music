@@ -15,7 +15,7 @@ import {
   Download,
   Share2,
   Loader2,
-  Music2,
+  Disc3,
   HardDriveDownload,
   CheckCircle2
 } from 'lucide-react';
@@ -84,16 +84,16 @@ export const FullPlayer: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#050811] flex flex-col justify-between p-6 safe-top safe-bottom animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 bg-[#050507] flex flex-col justify-between p-6 safe-top safe-bottom animate-in fade-in duration-200">
       {/* Dynamic blurred ambient glow behind player */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {currentSong.coverUrl ? (
           <div
-            className="absolute -top-1/4 -left-1/4 w-[150%] h-[150%] opacity-20 blur-3xl saturate-150 bg-cover bg-center"
+            className="absolute -top-1/4 -left-1/4 w-[150%] h-[150%] opacity-20 blur-3xl saturate-50 bg-cover bg-center"
             style={{ backgroundImage: `url(${currentSong.coverUrl})` }}
           />
         ) : (
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-cyan-600/10 blur-[120px]" />
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-white/[0.03] blur-[120px]" />
         )}
       </div>
 
@@ -101,24 +101,24 @@ export const FullPlayer: React.FC = () => {
       <div className="relative z-10 flex items-center justify-between">
         <button
           onClick={() => setFullPlayerOpen(false)}
-          className="p-2.5 rounded-full bg-slate-900/80 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 active:scale-95 transition-all"
+          className="p-2.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white hover:border-zinc-700 active:scale-95 transition-all"
           aria-label="Minimize player"
         >
           <ChevronDown className="w-5 h-5" />
         </button>
 
         <div className="text-center">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-cyan-400">
-            Playing
+          <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400">
+            Now Playing
           </p>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-zinc-500">
             {currentIndex + 1} of {songs.length}
           </p>
         </div>
 
         <button
           onClick={handleShare}
-          className="p-2.5 rounded-full bg-slate-900/80 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 active:scale-95 transition-all"
+          className="p-2.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white hover:border-zinc-700 active:scale-95 transition-all"
           aria-label="Share song"
         >
           <Share2 className="w-4 h-4" />
@@ -127,7 +127,7 @@ export const FullPlayer: React.FC = () => {
 
       {/* Center Artwork */}
       <div className="relative z-10 flex flex-col items-center justify-center my-auto py-4">
-        <div className="relative w-64 h-64 sm:w-72 sm:h-72 max-w-[75vw] max-h-[75vw] aspect-square rounded-3xl overflow-hidden shadow-2xl shadow-cyan-950/40 border border-slate-700/80">
+        <div className="relative w-64 h-64 sm:w-72 sm:h-72 max-w-[75vw] max-h-[75vw] aspect-square rounded-3xl overflow-hidden shadow-2xl shadow-black border border-white/10">
           {currentSong.coverUrl ? (
             <img
               src={currentSong.coverUrl}
@@ -137,11 +137,11 @@ export const FullPlayer: React.FC = () => {
               }`}
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-tr from-cyan-950 via-slate-900 to-emerald-950 flex flex-col items-center justify-center p-6 text-center">
-              <div className="w-20 h-20 rounded-full bg-cyan-950/80 border border-cyan-500/40 flex items-center justify-center mb-3 shadow-lg shadow-cyan-500/20">
-                <Music2 className="w-10 h-10 text-cyan-400" />
+            <div className="w-full h-full bg-[#121215] flex flex-col items-center justify-center p-6 text-center">
+              <div className="w-20 h-20 rounded-full bg-zinc-900 border border-zinc-700 flex items-center justify-center mb-3 shadow-md">
+                <Disc3 className="w-10 h-10 text-zinc-300" />
               </div>
-              <span className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-widest">
+              <span className="text-xs font-mono font-bold text-zinc-400 uppercase tracking-widest">
                 AI Beats
               </span>
             </div>
@@ -154,16 +154,16 @@ export const FullPlayer: React.FC = () => {
         {/* Title, Artist, & Download Actions */}
         <div className="flex items-center justify-between">
           <div className="min-w-0 pr-4">
-            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight truncate">
+            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight truncate">
               {currentSong.title}
             </h2>
             <div className="flex items-center space-x-2 mt-1">
-              <p className="text-sm font-medium text-slate-400 truncate">
+              <p className="text-sm font-medium text-zinc-400 truncate">
                 {currentSong.artist || 'AI Music'}
               </p>
               {isOffline && (
-                <span className="flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">
-                  <CheckCircle2 className="w-2.5 h-2.5 mr-1" />
+                <span className="flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-200 border border-zinc-700">
+                  <CheckCircle2 className="w-2.5 h-2.5 mr-1 text-white" />
                   Offline Ready
                 </span>
               )}
@@ -176,13 +176,13 @@ export const FullPlayer: React.FC = () => {
               onClick={() => toggleSongOffline(currentSong)}
               className={`p-3 rounded-full border transition-all ${
                 isOffline
-                  ? 'bg-emerald-950/60 border-emerald-500/50 text-emerald-400'
-                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-cyan-400 hover:border-slate-700'
+                  ? 'bg-white text-black border-white'
+                  : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700'
               }`}
               title={isOffline ? 'Downloaded to phone' : 'Save offline (listen without data)'}
             >
               {isOffline ? (
-                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                <CheckCircle2 className="w-5 h-5 text-black" />
               ) : (
                 <HardDriveDownload className="w-5 h-5" />
               )}
@@ -191,7 +191,7 @@ export const FullPlayer: React.FC = () => {
             {/* Direct MP3 file download */}
             <button
               onClick={handleDownloadMp3}
-              className="p-3 rounded-full bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 transition-colors"
+              className="p-3 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700 transition-colors"
               title="Download MP3 file"
             >
               <Download className="w-5 h-5" />
@@ -207,9 +207,9 @@ export const FullPlayer: React.FC = () => {
             max={duration || 100}
             value={currentTime}
             onChange={handleSeek}
-            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400 focus:outline-none"
+            className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white focus:outline-none"
           />
-          <div className="flex items-center justify-between text-xs font-mono text-slate-400">
+          <div className="flex items-center justify-between text-xs font-mono text-zinc-400">
             <span>{formatTime(currentTime)}</span>
             <span>{formatTime(duration)}</span>
           </div>
@@ -222,8 +222,8 @@ export const FullPlayer: React.FC = () => {
             onClick={toggleShuffle}
             className={`p-2.5 rounded-full transition-colors ${
               isShuffle
-                ? 'text-cyan-400 bg-cyan-950/40 border border-cyan-500/30'
-                : 'text-slate-500 hover:text-white'
+                ? 'text-white bg-zinc-800 border border-white/20'
+                : 'text-zinc-500 hover:text-white'
             }`}
             title="Shuffle"
           >
@@ -233,7 +233,7 @@ export const FullPlayer: React.FC = () => {
           {/* Previous Track */}
           <button
             onClick={prevSong}
-            className="p-2.5 rounded-full text-slate-300 hover:text-white active:scale-95 transition-all"
+            className="p-2.5 rounded-full text-zinc-300 hover:text-white active:scale-95 transition-all"
             title="Previous track"
           >
             <SkipBack className="w-7 h-7 fill-current" />
@@ -242,7 +242,7 @@ export const FullPlayer: React.FC = () => {
           {/* Large Hero Play/Pause Button */}
           <button
             onClick={togglePlay}
-            className="w-16 h-16 rounded-full bg-gradient-to-tr from-cyan-500 to-emerald-400 text-black flex items-center justify-center font-bold shadow-xl shadow-cyan-500/30 hover:scale-105 active:scale-95 transition-all neon-glow-cyan"
+            className="w-16 h-16 rounded-full bg-white text-black flex items-center justify-center font-bold shadow-2xl shadow-white/10 hover:scale-105 active:scale-95 transition-all"
             title={isPlaying ? 'Pause' : 'Play'}
           >
             {isBuffering ? (
@@ -257,7 +257,7 @@ export const FullPlayer: React.FC = () => {
           {/* Next Track */}
           <button
             onClick={nextSong}
-            className="p-2.5 rounded-full text-slate-300 hover:text-white active:scale-95 transition-all"
+            className="p-2.5 rounded-full text-zinc-300 hover:text-white active:scale-95 transition-all"
             title="Next track"
           >
             <SkipForward className="w-7 h-7 fill-current" />
@@ -268,8 +268,8 @@ export const FullPlayer: React.FC = () => {
             onClick={cycleRepeat}
             className={`p-2.5 rounded-full transition-colors ${
               repeatMode !== 'off'
-                ? 'text-cyan-400 bg-cyan-950/40 border border-cyan-500/30'
-                : 'text-slate-500 hover:text-white'
+                ? 'text-white bg-zinc-800 border border-white/20'
+                : 'text-zinc-500 hover:text-white'
             }`}
             title={`Repeat mode: ${repeatMode}`}
           >
@@ -285,10 +285,10 @@ export const FullPlayer: React.FC = () => {
         <div className="flex items-center space-x-3 px-4 pt-1">
           <button
             onClick={toggleMute}
-            className="text-slate-400 hover:text-white transition-colors"
+            className="text-zinc-400 hover:text-white transition-colors"
           >
             {isMuted || volume === 0 ? (
-              <VolumeX className="w-4 h-4 text-red-400" />
+              <VolumeX className="w-4 h-4 text-zinc-400" />
             ) : (
               <Volume2 className="w-4 h-4" />
             )}
@@ -300,7 +300,7 @@ export const FullPlayer: React.FC = () => {
             step={0.01}
             value={isMuted ? 0 : volume}
             onChange={(e) => setVolume(Number(e.target.value))}
-            className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400 focus:outline-none"
+            className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white focus:outline-none"
           />
         </div>
       </div>

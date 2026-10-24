@@ -9,7 +9,7 @@ import { InstallModal } from './components/InstallModal';
 
 export const AppContent: React.FC = () => {
   return (
-    <div className="min-h-screen bg-[#06090e] text-slate-100 flex flex-col antialiased selection:bg-cyan-500 selection:text-black">
+    <div className="min-h-screen bg-[#070709] text-zinc-100 flex flex-col antialiased selection:bg-white selection:text-black">
       <Header />
       <main className="flex-1">
         <SongList />

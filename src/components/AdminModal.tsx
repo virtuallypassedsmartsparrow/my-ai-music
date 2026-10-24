@@ -228,16 +228,16 @@ create policy "Allow admin delete" on songs for delete using (true);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="relative w-full max-w-lg bg-[#0a0f19] border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-lg bg-[#0e0e11] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-[#06090e]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800 bg-[#070709]">
           <div className="flex items-center space-x-2">
-            <KeyRound className="w-5 h-5 text-cyan-400" />
+            <KeyRound className="w-5 h-5 text-white" />
             <h3 className="text-base font-bold text-white">Creator Studio & Admin</h3>
           </div>
           <button
             onClick={() => setAdminOpen(false)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800"
           >
             <X className="w-4 h-4" />
           </button>
@@ -246,13 +246,13 @@ create policy "Allow admin delete" on songs for delete using (true);
         {/* PIN Screen */}
         {!isAuthenticated ? (
           <form onSubmit={handlePinSubmit} className="p-6 text-center space-y-4">
-            <div className="w-12 h-12 rounded-full bg-cyan-950/80 text-cyan-400 border border-cyan-500/30 flex items-center justify-center mx-auto shadow-lg shadow-cyan-500/20">
+            <div className="w-12 h-12 rounded-full bg-zinc-900 text-white border border-zinc-700 flex items-center justify-center mx-auto shadow-md">
               <KeyRound className="w-6 h-6" />
             </div>
             <div>
               <h4 className="text-sm font-bold text-white">Admin Authentication</h4>
-              <p className="text-xs text-slate-400 mt-1">
-                Enter your Admin PIN to upload new songs or adjust cloud settings. (Default PIN: <code className="text-cyan-300">1234</code>)
+              <p className="text-xs text-zinc-400 mt-1">
+                Enter your Admin PIN to upload new songs or adjust cloud settings. (Default PIN: <code className="text-white bg-zinc-800 px-1 py-0.5 rounded">1234</code>)
               </p>
             </div>
             <div className="max-w-xs mx-auto">
@@ -262,18 +262,18 @@ create policy "Allow admin delete" on songs for delete using (true);
                 value={pinInput}
                 onChange={(e) => setPinInput(e.target.value)}
                 placeholder="Enter PIN"
-                className="w-full text-center text-xl tracking-widest py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-cyan-500"
+                className="w-full text-center text-xl tracking-widest py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-white focus:outline-none focus:border-zinc-400"
                 autoFocus
               />
               {pinError && (
-                <p className="text-xs text-red-400 mt-1 flex items-center justify-center">
-                  <AlertCircle className="w-3.5 h-3.5 mr-1" /> Incorrect PIN. Try 1234.
+                <p className="text-xs text-zinc-400 mt-1 flex items-center justify-center">
+                  <AlertCircle className="w-3.5 h-3.5 mr-1 text-white" /> Incorrect PIN. Try 1234.
                 </p>
               )}
             </div>
             <button
               type="submit"
-              className="w-full max-w-xs py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:opacity-95 font-bold text-sm text-black transition-all shadow-md shadow-cyan-500/30"
+              className="w-full max-w-xs py-2.5 rounded-xl bg-white hover:bg-zinc-200 font-bold text-sm text-black transition-all shadow-md"
             >
               Unlock Creator Studio
             </button>
@@ -282,13 +282,13 @@ create policy "Allow admin delete" on songs for delete using (true);
           /* Authenticated Admin Tabs */
           <div className="flex flex-col flex-1 overflow-hidden">
             {/* Tabs */}
-            <div className="flex border-b border-slate-800 bg-[#06090e] px-4">
+            <div className="flex border-b border-zinc-800 bg-[#070709] px-4">
               <button
                 onClick={() => setActiveTab('upload')}
                 className={`flex items-center space-x-1.5 py-3 px-3 text-xs font-bold border-b-2 transition-all ${
                   activeTab === 'upload'
-                    ? 'border-cyan-400 text-cyan-300'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-zinc-400 hover:text-zinc-200'
                 }`}
               >
                 <Upload className="w-3.5 h-3.5" />
@@ -298,8 +298,8 @@ create policy "Allow admin delete" on songs for delete using (true);
                 onClick={() => setActiveTab('manage')}
                 className={`flex items-center space-x-1.5 py-3 px-3 text-xs font-bold border-b-2 transition-all ${
                   activeTab === 'manage'
-                    ? 'border-cyan-400 text-cyan-300'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-zinc-400 hover:text-zinc-200'
                 }`}
               >
                 <ListMusic className="w-3.5 h-3.5" />
@@ -309,8 +309,8 @@ create policy "Allow admin delete" on songs for delete using (true);
                 onClick={() => setActiveTab('settings')}
                 className={`flex items-center space-x-1.5 py-3 px-3 text-xs font-bold border-b-2 transition-all ${
                   activeTab === 'settings'
-                    ? 'border-cyan-400 text-cyan-300'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-zinc-400 hover:text-zinc-200'
                 }`}
               >
                 <Database className="w-3.5 h-3.5" />
@@ -323,17 +323,16 @@ create policy "Allow admin delete" on songs for delete using (true);
               {/* TAB 1: UPLOAD */}
               {activeTab === 'upload' && (
                 <form onSubmit={handleUploadSubmit} className="space-y-4">
-                  {/* Audio File Selection */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1">
                       Audio File (MP3 / WAV) *
                     </label>
-                    <label className="flex flex-col items-center justify-center p-5 rounded-xl border-2 border-dashed border-slate-700 hover:border-cyan-500/80 bg-slate-900/50 cursor-pointer transition-all">
-                      <Music className="w-8 h-8 text-cyan-400 mb-1" />
-                      <span className="text-xs font-medium text-slate-200">
-                        {audioFile ? audioFile.name : 'Tap to choose your AI track'}
+                    <label className="flex flex-col items-center justify-center p-5 rounded-xl border-2 border-dashed border-zinc-700 hover:border-zinc-400 bg-zinc-900/60 cursor-pointer transition-all">
+                      <Music className="w-8 h-8 text-zinc-400 mb-1" />
+                      <span className="text-xs font-medium text-zinc-200">
+                        {audioFile ? audioFile.name : 'Choose your AI track file'}
                       </span>
-                      <span className="text-[11px] text-slate-500 mt-0.5">
+                      <span className="text-[11px] text-zinc-500 mt-0.5">
                         {audioFile
                           ? `${(audioFile.size / (1024 * 1024)).toFixed(2)} MB • ${Math.round(detectedDuration)}s detected`
                           : 'Supports MP3 and WAV'}
@@ -347,20 +346,19 @@ create policy "Allow admin delete" on songs for delete using (true);
                     </label>
                   </div>
 
-                  {/* Artwork Image */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1">
                       Cover Artwork (Optional)
                     </label>
-                    <label className="flex items-center space-x-3 p-3 rounded-xl border border-slate-800 bg-slate-900/50 cursor-pointer hover:border-slate-700">
-                      <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 shrink-0">
+                    <label className="flex items-center space-x-3 p-3 rounded-xl border border-zinc-800 bg-zinc-900/50 cursor-pointer hover:border-zinc-700">
+                      <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-400 shrink-0">
                         <ImageIcon className="w-5 h-5" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium text-slate-300 truncate">
+                        <p className="text-xs font-medium text-zinc-300 truncate">
                           {coverFile ? coverFile.name : 'Choose album cover image'}
                         </p>
-                        <p className="text-[11px] text-slate-500">JPG, PNG, or WebP</p>
+                        <p className="text-[11px] text-zinc-500">JPG, PNG, or WebP</p>
                       </div>
                       <input
                         type="file"
@@ -371,10 +369,9 @@ create policy "Allow admin delete" on songs for delete using (true);
                     </label>
                   </div>
 
-                  {/* Song Metadata */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="col-span-2">
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-300 mb-1">
                         Song Title *
                       </label>
                       <input
@@ -382,12 +379,12 @@ create policy "Allow admin delete" on songs for delete using (true);
                         required
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder="e.g. Neon Horizon"
-                        className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
+                        placeholder="Song Title"
+                        className="w-full px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-white focus:outline-none focus:border-zinc-500"
                       />
                     </div>
-                    <div className="col-span-2">
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-300 mb-1">
                         Artist Name
                       </label>
                       <input
@@ -395,21 +392,20 @@ create policy "Allow admin delete" on songs for delete using (true);
                         value={artist}
                         onChange={(e) => setArtist(e.target.value)}
                         placeholder="Artist Handle"
-                        className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-500"
+                        className="w-full px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-white focus:outline-none focus:border-zinc-500"
                       />
                     </div>
                   </div>
 
-                  {/* Upload Status / Errors */}
                   {uploadStatus && (
-                    <div className="p-3 rounded-xl bg-cyan-950/40 border border-cyan-500/40 text-xs text-cyan-200 flex items-center space-x-2">
-                      <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+                    <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-zinc-200 flex items-center space-x-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
                       <span>{uploadStatus}</span>
                     </div>
                   )}
 
                   {uploadError && (
-                    <div className="p-3 rounded-xl bg-red-950/40 border border-red-500/40 text-xs text-red-200 flex items-center space-x-2">
+                    <div className="p-3 rounded-xl bg-zinc-900 border border-red-500/50 text-xs text-zinc-200 flex items-center space-x-2">
                       <AlertCircle className="w-4 h-4 text-red-400" />
                       <span>{uploadError}</span>
                     </div>
@@ -418,7 +414,7 @@ create policy "Allow admin delete" on songs for delete using (true);
                   <button
                     type="submit"
                     disabled={isUploading}
-                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:opacity-95 disabled:opacity-50 text-black font-bold text-xs transition-all shadow-md shadow-cyan-500/25 flex items-center justify-center space-x-1.5"
+                    className="w-full py-2.5 rounded-xl bg-white hover:bg-zinc-200 disabled:opacity-50 text-black font-bold text-xs transition-all shadow-md flex items-center justify-center space-x-1.5"
                   >
                     {isUploading ? (
                       <>
@@ -438,13 +434,13 @@ create policy "Allow admin delete" on songs for delete using (true);
               {/* TAB 2: MANAGE TRACKS */}
               {activeTab === 'manage' && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                    <p className="text-xs text-slate-400">
+                  <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
+                    <p className="text-xs text-zinc-400">
                       Total: <span className="font-semibold text-white">{songs.length} tracks</span>
                     </p>
                     <button
                       onClick={() => exportSongsToJson(songs)}
-                      className="flex items-center space-x-1 text-xs px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700"
+                      className="flex items-center space-x-1 text-xs px-2.5 py-1 rounded-lg bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700"
                       title="Export songs.json"
                     >
                       <FileDown className="w-3.5 h-3.5" />
@@ -456,17 +452,17 @@ create policy "Allow admin delete" on songs for delete using (true);
                     {songs.map((song) => (
                       <div
                         key={song.id}
-                        className="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800/80 text-xs"
+                        className="flex items-center justify-between p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-xs"
                       >
                         <div className="min-w-0 pr-2 flex-1">
                           <p className="font-bold text-white truncate">{song.title}</p>
-                          <p className="text-slate-400 text-[11px] truncate">
+                          <p className="text-zinc-400 text-[11px] truncate">
                             {song.artist || 'AI Music'}
                           </p>
                         </div>
                         <button
                           onClick={() => handleDeleteSong(song.id, song.title)}
-                          className="p-1.5 rounded text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                          className="p-1.5 rounded text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                           title="Delete track"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -480,30 +476,30 @@ create policy "Allow admin delete" on songs for delete using (true);
               {/* TAB 3: CLOUD SETUP */}
               {activeTab === 'settings' && (
                 <form onSubmit={handleSaveSettings} className="space-y-4 text-xs">
-                  <div className="p-3 rounded-xl bg-cyan-950/20 border border-cyan-500/30 text-slate-300 space-y-1.5">
-                    <p className="font-bold text-cyan-300 flex items-center">
-                      <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                  <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-300 space-y-1.5">
+                    <p className="font-bold text-white flex items-center">
+                      <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-white" />
                       Free 1GB Supabase Setup (Stream to All Friends)
                     </p>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-[11px] text-zinc-400">
                       1. Create a free account at{' '}
                       <a
                         href="https://supabase.com"
                         target="_blank"
                         rel="noreferrer"
-                        className="text-cyan-400 underline inline-flex items-center"
+                        className="text-white underline inline-flex items-center"
                       >
                         supabase.com <ExternalLink className="w-2.5 h-2.5 ml-0.5" />
                       </a>
                       <br />
-                      2. Create a public storage bucket named <code className="text-cyan-300">music</code>.
+                      2. Create a public storage bucket named <code className="text-white">music</code>.
                       <br />
                       3. Run the SQL script below in the Supabase SQL Editor.
                     </p>
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-slate-300 mb-1">
+                    <label className="block font-semibold text-zinc-300 mb-1">
                       Supabase Project URL
                     </label>
                     <input
@@ -513,12 +509,12 @@ create policy "Allow admin delete" on songs for delete using (true);
                         setSettingsState({ ...settings, supabaseUrl: e.target.value })
                       }
                       placeholder="https://xyzcompany.supabase.co"
-                      className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-white focus:outline-none focus:border-cyan-500"
+                      className="w-full px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:border-zinc-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-slate-300 mb-1">
+                    <label className="block font-semibold text-zinc-300 mb-1">
                       Supabase Anon Public API Key
                     </label>
                     <input
@@ -528,12 +524,12 @@ create policy "Allow admin delete" on songs for delete using (true);
                         setSettingsState({ ...settings, supabaseAnonKey: e.target.value })
                       }
                       placeholder="eyJhbGciOi..."
-                      className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-white focus:outline-none focus:border-cyan-500"
+                      className="w-full px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:border-zinc-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-slate-300 mb-1">
+                    <label className="block font-semibold text-zinc-300 mb-1">
                       Admin PIN Code
                     </label>
                     <input
@@ -543,7 +539,7 @@ create policy "Allow admin delete" on songs for delete using (true);
                       onChange={(e) =>
                         setSettingsState({ ...settings, adminPin: e.target.value })
                       }
-                      className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-white focus:outline-none focus:border-cyan-500 font-mono"
+                      className="w-full px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:border-zinc-500 font-mono"
                     />
                   </div>
 
@@ -551,9 +547,9 @@ create policy "Allow admin delete" on songs for delete using (true);
                     <button
                       type="button"
                       onClick={copySqlToClipboard}
-                      className="w-full py-2 px-3 rounded-lg bg-slate-900 border border-slate-700 hover:border-cyan-500 text-slate-300 hover:text-white flex items-center justify-center space-x-1.5 transition-colors"
+                      className="w-full py-2 px-3 rounded-lg bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-zinc-300 hover:text-white flex items-center justify-center space-x-1.5 transition-colors"
                     >
-                      <Copy className="w-3.5 h-3.5 text-cyan-400" />
+                      <Copy className="w-3.5 h-3.5" />
                       <span>{copiedSql ? 'SQL Copied!' : 'Copy Supabase SQL Setup'}</span>
                     </button>
                   </div>
@@ -562,12 +558,12 @@ create policy "Allow admin delete" on songs for delete using (true);
                     <div
                       className={`p-2.5 rounded-lg border text-xs flex items-center space-x-2 ${
                         testResult.success
-                          ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
-                          : 'bg-red-950/40 border-red-500/40 text-red-300'
+                          ? 'bg-zinc-900 border-zinc-600 text-white'
+                          : 'bg-zinc-900 border-red-500/50 text-zinc-200'
                       }`}
                     >
                       {testResult.success ? (
-                        <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                        <CheckCircle2 className="w-4 h-4 shrink-0 text-white" />
                       ) : (
                         <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
                       )}
@@ -579,13 +575,13 @@ create policy "Allow admin delete" on songs for delete using (true);
                     <button
                       type="button"
                       onClick={handleTestConnection}
-                      className="flex-1 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold"
+                      className="flex-1 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold"
                     >
                       Test Connection
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-emerald-500 text-black font-bold shadow-md shadow-cyan-500/30"
+                      className="flex-1 py-2 rounded-lg bg-white text-black font-bold shadow-md hover:bg-zinc-200"
                     >
                       Save Settings
                     </button>
