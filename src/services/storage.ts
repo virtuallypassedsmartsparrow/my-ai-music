@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Song, CloudSettings } from '../types';
+import { getOfflineSongsData } from './offlineCache';
 
 const SETTINGS_KEY = 'ai_music_cloud_settings';
 const CUSTOM_SONGS_KEY = 'ai_music_custom_songs';
@@ -79,15 +80,35 @@ export async function fetchAllSongs(): Promise<Song[]> {
     }
   }
 
-  // Fallback: static songs.json + locally added songs
+  // Fallback: static songs.json + locally cached playlist when offline
   let baseSongs: Song[] = [];
   try {
-    const res = await fetch(`/songs.json?t=${Date.now()}`, { cache: 'no-store' });
+    const res = await fetch('/songs.json');
     if (res.ok) {
       baseSongs = await res.json();
+      if (baseSongs.length > 0) {
+        localStorage.setItem('ai_music_cached_playlist', JSON.stringify(baseSongs));
+      }
     }
   } catch (e) {
-    console.warn('Failed to load songs.json:', e);
+    console.warn('Network offline or fetch failed:', e);
+  }
+
+  // If network failed (e.g. WiFi or cellular turned off), load from local cache
+  if (baseSongs.length === 0) {
+    try {
+      const cached = localStorage.getItem('ai_music_cached_playlist');
+      if (cached) {
+        baseSongs = JSON.parse(cached);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // If still empty, load from downloaded offline songs storage
+  if (baseSongs.length === 0) {
+    baseSongs = getOfflineSongsData();
   }
 
   try {

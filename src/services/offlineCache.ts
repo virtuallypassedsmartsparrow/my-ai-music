@@ -1,5 +1,8 @@
+import type { Song } from '../types';
+
 const CACHE_NAME = 'ai-music-offline-v1';
 const OFFLINE_INDEX_KEY = 'ai_music_offline_ids';
+const OFFLINE_SONGS_KEY = 'ai_music_offline_songs_data';
 
 export function getOfflineSongIds(): string[] {
   try {
@@ -14,6 +17,28 @@ function setOfflineSongIds(ids: string[]) {
   localStorage.setItem(OFFLINE_INDEX_KEY, JSON.stringify(ids));
 }
 
+export function getOfflineSongsData(): Song[] {
+  try {
+    const raw = localStorage.getItem(OFFLINE_SONGS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveOfflineSongData(song: Song) {
+  const current = getOfflineSongsData();
+  const filtered = current.filter(s => s.id !== song.id);
+  filtered.push(song);
+  localStorage.setItem(OFFLINE_SONGS_KEY, JSON.stringify(filtered));
+}
+
+function removeOfflineSongData(songId: string) {
+  const current = getOfflineSongsData();
+  const filtered = current.filter(s => s.id !== songId);
+  localStorage.setItem(OFFLINE_SONGS_KEY, JSON.stringify(filtered));
+}
+
 /**
  * Checks if a song is downloaded for offline playback
  */
@@ -23,38 +48,42 @@ export async function isSongOffline(songId: string): Promise<boolean> {
 }
 
 /**
- * Downloads a single song to the phone's offline cache
+ * Downloads a single song and its audio to the phone's offline cache
  */
-export async function cacheSongOffline(song: { id: string; url: string }): Promise<void> {
+export async function cacheSongOffline(song: Song): Promise<void> {
   if (!('caches' in window)) {
     throw new Error('Offline storage is not supported in this browser.');
   }
 
   const cache = await caches.open(CACHE_NAME);
-  // Fetch the audio and store in cache
   const response = await fetch(song.url, { mode: 'cors' });
   if (!response.ok) {
     throw new Error(`Failed to download audio track (${response.status})`);
   }
   await cache.put(song.url, response);
 
+  // Save ID
   const ids = getOfflineSongIds();
   if (!ids.includes(song.id)) {
     ids.push(song.id);
     setOfflineSongIds(ids);
   }
+
+  // Save full song metadata so playlist works with 0% internet
+  saveOfflineSongData(song);
 }
 
 /**
  * Removes a song from offline cache
  */
-export async function removeSongFromCache(song: { id: string; url: string }): Promise<void> {
+export async function removeSongFromCache(song: Song): Promise<void> {
   if ('caches' in window) {
     const cache = await caches.open(CACHE_NAME);
     await cache.delete(song.url);
   }
   const ids = getOfflineSongIds().filter(id => id !== song.id);
   setOfflineSongIds(ids);
+  removeOfflineSongData(song.id);
 }
 
 /**
@@ -76,10 +105,10 @@ export async function getPlayableAudioUrl(url: string): Promise<string> {
 }
 
 /**
- * Downloads all songs for offline listening (e.g. before getting on a plane / to save cell data)
+ * Downloads all songs for offline listening
  */
 export async function cacheAllSongsOffline(
-  songs: { id: string; url: string }[],
+  songs: Song[],
   onProgress?: (completed: number, total: number) => void
 ): Promise<void> {
   let count = 0;
@@ -104,4 +133,5 @@ export async function clearAllOfflineCache(): Promise<void> {
     await caches.delete(CACHE_NAME);
   }
   localStorage.removeItem(OFFLINE_INDEX_KEY);
+  localStorage.removeItem(OFFLINE_SONGS_KEY);
 }
