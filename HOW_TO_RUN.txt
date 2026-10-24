@@ -1,0 +1,43 @@
+================================================================================
+                    AI BEATS - QUICK COMMAND CHEAT SHEET
+================================================================================
+
+EVERY TIME you open Command Prompt, copy and paste this exact command first
+so you are in the correct folder:
+
+cd "C:\Users\20225074\OneDrive - TU Eindhoven\Desktop\Other\Coding\AntiGravity\MusicAI"
+
+--------------------------------------------------------------------------------
+1. TO START THE APP (PLAY MUSIC ON YOUR COMPUTER & PHONE)
+--------------------------------------------------------------------------------
+Type:
+npm run dev
+
+Then:
+- On your computer: Open http://localhost:5173 in your browser.
+- On your phone (same Wi-Fi): Open the "Network" link shown in the terminal
+  (e.g., http://192.168.x.x:5173).
+
+To stop the server: Press Ctrl + C in the command window.
+
+--------------------------------------------------------------------------------
+2. WHEN YOU ADD NEW MP3 SONGS (NEXT MONTH)
+--------------------------------------------------------------------------------
+Step 1: Drop your new .mp3 files into:
+        C:\Users\20225074\OneDrive - TU Eindhoven\Desktop\Other\Coding\AntiGravity\MusicAI\public\audio
+
+Step 2: In Command Prompt (inside the folder), run:
+        npm run sync
+
+This automatically updates your song list and extracts the exact duration.
+
+--------------------------------------------------------------------------------
+3. TO DEPLOY TO THE INTERNET SO FRIENDS CAN DOWNLOAD IT ON THEIR PHONES
+--------------------------------------------------------------------------------
+See README.md or run:
+git add .
+git commit -m "Update songs"
+git push
+
+(Connect your GitHub repo to Vercel.com for free 1-click hosting).
+================================================================================
