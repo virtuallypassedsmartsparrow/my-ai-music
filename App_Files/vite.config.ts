@@ -45,17 +45,43 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
         runtimeCaching: [
           {
+            // Cache all local audio files with HTTP 206 byte-range request support for smooth streaming
+            urlPattern: /\/audio\/.*\.(?:mp3|wav|m4a|ogg|flac)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'ai-music-audio-cache',
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200, 206]
+              },
+              rangeRequests: true
+            }
+          },
+          {
+            // Keep songs metadata updated, but serve from cache when offline
+            urlPattern: /\/songs\.json.*$/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'songs-metadata-cache',
+              networkTimeoutSeconds: 3
+            }
+          },
+          {
             urlPattern: /^https:\/\/.*\/storage\/v1\/object\/public\/.*$/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'audio-storage-cache',
               expiration: {
                 maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+                maxAgeSeconds: 60 * 60 * 24 * 30
               },
               cacheableResponse: {
                 statuses: [0, 200, 206]
-              }
+              },
+              rangeRequests: true
             }
           }
         ]

@@ -5,7 +5,6 @@ import {
   getOfflineSongIds,
   cacheSongOffline,
   removeSongFromCache,
-  getPlayableAudioUrl,
   cacheAllSongsOffline
 } from '../services/offlineCache';
 
@@ -94,8 +93,18 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     audio.preload = 'metadata';
     audioRef.current = audio;
 
-    const onPlay = () => setIsPlaying(true);
-    const onPause = () => setIsPlaying(false);
+    const onPlay = () => {
+      setIsPlaying(true);
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = 'playing';
+      }
+    };
+    const onPause = () => {
+      setIsPlaying(false);
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = 'paused';
+      }
+    };
     const onWaiting = () => setIsBuffering(true);
     const onCanPlay = () => setIsBuffering(false);
     const onTimeUpdate = () => {
@@ -184,8 +193,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Current index in list
   const currentIndex = currentSong ? songs.findIndex(s => s.id === currentSong.id) : -1;
 
-  // Play a specific song (offline-aware)
-  const playSong = useCallback(async (song: Song) => {
+  // Play a specific song (offline-aware, synchronous to prevent mobile autoplay pause)
+  const playSong = useCallback((song: Song) => {
     if (!audioRef.current) return;
     const audio = audioRef.current;
 
@@ -201,14 +210,11 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setCurrentSong(song);
     setIsBuffering(true);
 
-    // Get offline URL if available to save mobile data
-    const playableUrl = await getPlayableAudioUrl(song.url);
-    audio.src = playableUrl;
-    audio.currentTime = 0;
-    setCurrentTime(0);
+    // Directly set audio.src - the PWA Service Worker handles offline range streaming natively
+    audio.src = song.url;
 
     audio.play().catch((err) => {
-      console.warn('Autoplay prevented or network error:', err);
+      console.warn('Playback error:', err);
       setIsBuffering(false);
       setIsPlaying(false);
     });
@@ -349,14 +355,14 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setOfflineProgress({ isDownloading: false, completed: songs.length, total: songs.length });
   }, [songs]);
 
-  // MediaSession API setup
+  // MediaSession API setup for lock screen and Windows taskbar / SMTC controls
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;
 
     if (currentSong) {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: currentSong.title,
-        artist: currentSong.artist,
+        artist: currentSong.artist || 'AI Music',
         album: currentSong.album || 'AI Collection',
         artwork: [
           {
@@ -371,28 +377,31 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           }
         ]
       });
+      navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
     }
 
-    navigator.mediaSession.setActionHandler('play', () => resume());
-    navigator.mediaSession.setActionHandler('pause', () => pause());
-    navigator.mediaSession.setActionHandler('previoustrack', () => prevSong());
-    navigator.mediaSession.setActionHandler('nexttrack', () => nextSong());
-    navigator.mediaSession.setActionHandler('seekto', (details) => {
-      if (details.seekTime !== undefined) {
-        seekTo(details.seekTime);
-      }
-    });
-
-    return () => {
-      if ('mediaSession' in navigator) {
-        navigator.mediaSession.setActionHandler('play', null);
-        navigator.mediaSession.setActionHandler('pause', null);
-        navigator.mediaSession.setActionHandler('previoustrack', null);
-        navigator.mediaSession.setActionHandler('nexttrack', null);
-        navigator.mediaSession.setActionHandler('seekto', null);
-      }
-    };
-  }, [currentSong, resume, pause, prevSong, nextSong, seekTo]);
+    try {
+      navigator.mediaSession.setActionHandler('play', () => resume());
+      navigator.mediaSession.setActionHandler('pause', () => pause());
+      navigator.mediaSession.setActionHandler('previoustrack', () => prevSong());
+      navigator.mediaSession.setActionHandler('nexttrack', () => nextSong());
+      navigator.mediaSession.setActionHandler('seekbackward', (details) => {
+        const offset = details.seekOffset || 10;
+        seekTo(Math.max(currentTime - offset, 0));
+      });
+      navigator.mediaSession.setActionHandler('seekforward', (details) => {
+        const offset = details.seekOffset || 10;
+        seekTo(Math.min(currentTime + offset, duration));
+      });
+      navigator.mediaSession.setActionHandler('seekto', (details) => {
+        if (details.seekTime !== undefined) {
+          seekTo(details.seekTime);
+        }
+      });
+    } catch (err) {
+      console.warn('MediaSession handler error:', err);
+    }
+  }, [currentSong, isPlaying, currentTime, duration, resume, pause, prevSong, nextSong, seekTo]);
 
   const promptPwaInstall = useCallback(async () => {
     if (deferredPrompt) {

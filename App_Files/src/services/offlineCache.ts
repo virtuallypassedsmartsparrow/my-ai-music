@@ -1,6 +1,6 @@
 import type { Song } from '../types';
 
-const CACHE_NAME = 'ai-music-offline-v1';
+export const CACHE_NAME = 'ai-music-audio-cache';
 const OFFLINE_INDEX_KEY = 'ai_music_offline_ids';
 const OFFLINE_SONGS_KEY = 'ai_music_offline_songs_data';
 
@@ -87,20 +87,12 @@ export async function removeSongFromCache(song: Song): Promise<void> {
 }
 
 /**
- * Gets the playable URL (cached blob URL if available, else original URL)
+ * Gets the playable URL.
+ * The Service Worker natively caches and handles HTTP 206 byte-ranges
+ * for song.url, so returning song.url directly provides smooth background playback
+ * without the 0.5s pause/stall caused by Blob URLs on mobile devices.
  */
 export async function getPlayableAudioUrl(url: string): Promise<string> {
-  if (!('caches' in window)) return url;
-  try {
-    const cache = await caches.open(CACHE_NAME);
-    const cachedResponse = await cache.match(url);
-    if (cachedResponse) {
-      const blob = await cachedResponse.blob();
-      return URL.createObjectURL(blob);
-    }
-  } catch (err) {
-    console.warn('Failed to retrieve from offline cache:', err);
-  }
   return url;
 }
 

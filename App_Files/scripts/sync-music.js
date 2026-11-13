@@ -6,10 +6,49 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const audioDir = path.resolve(__dirname, '../public/audio');
+const addMusicDir = path.resolve(__dirname, '../../Add_Music');
 const songsJsonPath = path.resolve(__dirname, '../public/songs.json');
 
 if (!fs.existsSync(audioDir)) {
   fs.mkdirSync(audioDir, { recursive: true });
+}
+
+// 1. Sync from Add_Music folder if present
+const audioExtensions = new Set(['.mp3', '.wav', '.m4a', '.ogg', '.flac']);
+
+if (fs.existsSync(addMusicDir)) {
+  try {
+    const addMusicFiles = fs.readdirSync(addMusicDir);
+    let copiedCount = 0;
+    for (const file of addMusicFiles) {
+      const ext = path.extname(file).toLowerCase();
+      if (!audioExtensions.has(ext)) continue;
+
+      const sourceFile = path.join(addMusicDir, file);
+      const destFile = path.join(audioDir, file);
+
+      let needCopy = false;
+      if (!fs.existsSync(destFile)) {
+        needCopy = true;
+      } else {
+        const srcStat = fs.statSync(sourceFile);
+        const dstStat = fs.statSync(destFile);
+        if (srcStat.size !== dstStat.size) {
+          needCopy = true;
+        }
+      }
+
+      if (needCopy) {
+        fs.copyFileSync(sourceFile, destFile);
+        copiedCount++;
+      }
+    }
+    if (copiedCount > 0) {
+      console.log(`Synced ${copiedCount} new/updated song(s) from Add_Music to App_Files/public/audio`);
+    }
+  } catch (err) {
+    console.warn('Warning syncing Add_Music folder:', err.message);
+  }
 }
 
 // Helper to calculate MP3 duration from file size and frame bitrate
@@ -56,7 +95,6 @@ if (fs.existsSync(songsJsonPath)) {
 const existingMap = new Map(existingSongs.map(s => [s.url, s]));
 
 // Scan audio directory
-const audioExtensions = new Set(['.mp3', '.wav', '.m4a', '.ogg', '.flac']);
 const files = fs.readdirSync(audioDir);
 
 const validFiles = files.filter(file => {

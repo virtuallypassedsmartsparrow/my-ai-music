@@ -9,8 +9,8 @@ echo.
 :: Automatically switch to this script's folder
 cd /d "%~dp0"
 
-echo [1/3] Scanning public\audio for new MP3 songs...
-node scripts/sync-music.js
+echo [1/3] Syncing songs from Add_Music folder...
+node App_Files\scripts\sync-music.js
 if %errorlevel% neq 0 (
     color 0c
     echo.
