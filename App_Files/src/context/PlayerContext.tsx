@@ -5,7 +5,8 @@ import {
   getOfflineSongIds,
   cacheSongOffline,
   removeSongFromCache,
-  cacheAllSongsOffline
+  cacheAllSongsOffline,
+  cleanPartialAudioCache
 } from '../services/offlineCache';
 
 interface PlayerContextType {
@@ -106,6 +107,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (!audioRef.current) return;
     const audio = audioRef.current;
 
+    // Protect against transient 'pause' event emitted when swapping audio.src
+    isTransitioningRef.current = true;
     currentSongRef.current = song;
     setCurrentSong(song);
     setIsBuffering(true);
@@ -143,6 +146,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           setIsPlaying(true);
           isPlayingRef.current = true;
           setIsBuffering(false);
+          isTransitioningRef.current = false;
         })
         .catch((err) => {
           console.warn('Playback play() error:', err);
@@ -153,16 +157,22 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             audio.play().then(() => {
               setIsPlaying(true);
               isPlayingRef.current = true;
-            }).catch(console.warn);
+              isTransitioningRef.current = false;
+            }).catch(() => {
+              isTransitioningRef.current = false;
+            });
           };
           audio.addEventListener('canplay', onCanPlayRetry);
         });
+    } else {
+      setTimeout(() => { isTransitioningRef.current = false; }, 300);
     }
   };
 
-  // Initialize offline list
+  // Initialize offline list & purge any stale partial 206 cache entries
   useEffect(() => {
     setOfflineIds(getOfflineSongIds());
+    cleanPartialAudioCache();
   }, []);
 
   // Initialize Audio instance
@@ -172,6 +182,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     audioRef.current = audio;
 
     const onPlay = () => {
+      isTransitioningRef.current = false;
       setIsPlaying(true);
       isPlayingRef.current = true;
       if ('mediaSession' in navigator) {
@@ -409,9 +420,26 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Seek
   const seekTo = useCallback((time: number) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = time;
-      setCurrentTime(time);
+    const audio = audioRef.current;
+    if (!audio) return;
+    const clamped = Math.max(0, Math.min(time, isFinite(audio.duration) ? audio.duration : time));
+    audio.currentTime = clamped;
+    setCurrentTime(clamped);
+    if (
+      'mediaSession' in navigator &&
+      navigator.mediaSession.setPositionState &&
+      isFinite(audio.duration) &&
+      audio.duration > 0
+    ) {
+      try {
+        navigator.mediaSession.setPositionState({
+          duration: audio.duration,
+          playbackRate: audio.playbackRate || 1,
+          position: clamped
+        });
+      } catch {
+        // ignore
+      }
     }
   }, []);
 
@@ -475,30 +503,31 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setOfflineProgress({ isDownloading: false, completed: songs.length, total: songs.length });
   }, [songs]);
 
-  // MediaSession API setup for lock screen and Windows taskbar / SMTC controls
+  // Update MediaSession metadata only when the active song changes
+  useEffect(() => {
+    if (!('mediaSession' in navigator) || !currentSong) return;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: currentSong.title,
+      artist: currentSong.artist || 'AI Music',
+      album: currentSong.album || 'AI Collection',
+      artwork: [
+        {
+          src: currentSong.coverUrl || '/icons/icon-192.png',
+          sizes: '192x192',
+          type: 'image/png'
+        },
+        {
+          src: currentSong.coverUrl || '/icons/icon-512.png',
+          sizes: '512x512',
+          type: 'image/png'
+        }
+      ]
+    });
+  }, [currentSong]);
+
+  // Register MediaSession action handlers once (no currentTime thrashing on mobile background playback)
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;
-
-    if (currentSong) {
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: currentSong.title,
-        artist: currentSong.artist || 'AI Music',
-        album: currentSong.album || 'AI Collection',
-        artwork: [
-          {
-            src: currentSong.coverUrl || '/icons/icon-192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: currentSong.coverUrl || '/icons/icon-512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
-      });
-      navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
-    }
 
     try {
       navigator.mediaSession.setActionHandler('play', () => resume());
@@ -506,12 +535,17 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       navigator.mediaSession.setActionHandler('previoustrack', () => prevSong());
       navigator.mediaSession.setActionHandler('nexttrack', () => nextSong());
       navigator.mediaSession.setActionHandler('seekbackward', (details) => {
+        const audio = audioRef.current;
+        if (!audio) return;
         const offset = details.seekOffset || 10;
-        seekTo(Math.max(currentTime - offset, 0));
+        seekTo(Math.max(audio.currentTime - offset, 0));
       });
       navigator.mediaSession.setActionHandler('seekforward', (details) => {
+        const audio = audioRef.current;
+        if (!audio) return;
         const offset = details.seekOffset || 10;
-        seekTo(Math.min(currentTime + offset, duration));
+        const maxDur = isFinite(audio.duration) ? audio.duration : audio.currentTime + offset;
+        seekTo(Math.min(audio.currentTime + offset, maxDur));
       });
       navigator.mediaSession.setActionHandler('seekto', (details) => {
         if (details.seekTime !== undefined) {
@@ -521,7 +555,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } catch (err) {
       console.warn('MediaSession handler error:', err);
     }
-  }, [currentSong, isPlaying, currentTime, duration, resume, pause, prevSong, nextSong, seekTo]);
+  }, [resume, pause, prevSong, nextSong, seekTo]);
 
   const promptPwaInstall = useCallback(async () => {
     if (deferredPrompt) {

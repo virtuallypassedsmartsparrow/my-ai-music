@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { usePlayer } from '../context/PlayerContext';
 import { formatTime } from '../utils/format';
 import {
@@ -47,12 +47,42 @@ export const FullPlayer: React.FC = () => {
     toggleSongOffline
   } = usePlayer();
 
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragTime, setDragTime] = useState(0);
+  const isDraggingRef = useRef(false);
+  const dragTimeRef = useRef<number | null>(null);
+
   if (!isFullPlayerOpen || !currentSong) return null;
 
   const isOffline = offlineIds.includes(currentSong.id);
+  const effectiveDuration = duration > 0 ? duration : (currentSong.duration || 100);
+  const displayTime = isDragging ? dragTime : currentTime;
 
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    seekTo(Number(e.target.value));
+  const handleSeekStart = () => {
+    isDraggingRef.current = true;
+    setIsDragging(true);
+    setDragTime(currentTime);
+    dragTimeRef.current = currentTime;
+  };
+
+  const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = Number(e.target.value);
+    setDragTime(val);
+    dragTimeRef.current = val;
+    if (!isDraggingRef.current) {
+      seekTo(val);
+    }
+  };
+
+  const handleSeekEnd = () => {
+    if (isDraggingRef.current) {
+      isDraggingRef.current = false;
+      setIsDragging(false);
+      if (dragTimeRef.current !== null) {
+        seekTo(dragTimeRef.current);
+      }
+      dragTimeRef.current = null;
+    }
   };
 
   const handleShare = async () => {
@@ -200,18 +230,27 @@ export const FullPlayer: React.FC = () => {
         </div>
 
         {/* Timeline Scrubber */}
-        <div className="space-y-1.5">
-          <input
-            type="range"
-            min={0}
-            max={duration || 100}
-            value={currentTime}
-            onChange={handleSeek}
-            className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white focus:outline-none"
-          />
+        <div className="space-y-1">
+          <div className="relative flex items-center py-2.5 touch-none">
+            <input
+              type="range"
+              min={0}
+              max={effectiveDuration}
+              step={0.1}
+              value={Math.min(displayTime, effectiveDuration)}
+              onPointerDown={handleSeekStart}
+              onTouchStart={handleSeekStart}
+              onChange={handleSeekChange}
+              onPointerUp={handleSeekEnd}
+              onPointerCancel={handleSeekEnd}
+              onTouchEnd={handleSeekEnd}
+              className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white focus:outline-none touch-none"
+              aria-label="Song progress scrubber"
+            />
+          </div>
           <div className="flex items-center justify-between text-xs font-mono text-zinc-400">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
+            <span>{formatTime(displayTime)}</span>
+            <span>{formatTime(effectiveDuration)}</span>
           </div>
         </div>
 
@@ -281,8 +320,8 @@ export const FullPlayer: React.FC = () => {
           </button>
         </div>
 
-        {/* Volume Slider Row */}
-        <div className="flex items-center space-x-3 px-4 pt-1">
+        {/* Volume Slider Row (Desktop only, matching Spotify Mobile vs Desktop) */}
+        <div className="hidden md:flex items-center space-x-3 px-4 pt-1">
           <button
             onClick={toggleMute}
             className="text-zinc-400 hover:text-white transition-colors"

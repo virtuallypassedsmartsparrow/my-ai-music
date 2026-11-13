@@ -48,6 +48,26 @@ export async function isSongOffline(songId: string): Promise<boolean> {
 }
 
 /**
+ * Removes any broken HTTP 206 partial entries from Cache Storage so that
+ * RangeRequestsPlugin only ever serves complete 200 OK cached tracks.
+ */
+export async function cleanPartialAudioCache(): Promise<void> {
+  if (!('caches' in window)) return;
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    const keys = await cache.keys();
+    for (const req of keys) {
+      const resp = await cache.match(req);
+      if (resp && resp.status !== 200) {
+        await cache.delete(req);
+      }
+    }
+  } catch (err) {
+    console.warn('Cache cleanup skipped:', err);
+  }
+}
+
+/**
  * Downloads a single song and its audio to the phone's offline cache
  */
 export async function cacheSongOffline(song: Song): Promise<void> {
@@ -56,9 +76,9 @@ export async function cacheSongOffline(song: Song): Promise<void> {
   }
 
   const cache = await caches.open(CACHE_NAME);
-  const response = await fetch(song.url, { mode: 'cors' });
-  if (!response.ok) {
-    throw new Error(`Failed to download audio track (${response.status})`);
+  const response = await fetch(song.url, { mode: 'cors', cache: 'no-store' });
+  if (response.status !== 200) {
+    throw new Error(`Failed to download full audio track (${response.status})`);
   }
   await cache.put(song.url, response);
 
