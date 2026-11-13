@@ -81,12 +81,12 @@ export const SongList: React.FC = () => {
         </div>
 
         {/* Shuffle All Button */}
-        {songs.length > 1 && (
+        {filteredSongs.length > 1 && (
           <button
             onClick={() => {
               toggleShuffle();
-              const randomIdx = Math.floor(Math.random() * songs.length);
-              playSong(songs[randomIdx]);
+              const randomIdx = Math.floor(Math.random() * filteredSongs.length);
+              playSong(filteredSongs[randomIdx], filteredSongs);
             }}
             className="flex items-center space-x-1.5 px-3 py-2.5 rounded-xl bg-[#111114] border border-zinc-800 hover:border-zinc-600 hover:text-white text-xs font-semibold text-zinc-300 transition-all active:scale-95 shrink-0"
             title="Shuffle play all tracks"
@@ -130,7 +130,7 @@ export const SongList: React.FC = () => {
             return (
               <div
                 key={song.id}
-                onClick={() => playSong(song)}
+                onClick={() => playSong(song, filteredSongs)}
                 className={`group relative flex items-center justify-between p-3 rounded-2xl transition-all cursor-pointer border ${
                   isCurrent
                     ? 'swish-card-active'
@@ -196,7 +196,7 @@ export const SongList: React.FC = () => {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    playSong(song);
+                    playSong(song, filteredSongs);
                   }}
                   className={`p-2.5 rounded-full transition-all shrink-0 ${
                     isCurrentPlaying

@@ -1,6 +1,6 @@
 import React from 'react';
 import { usePlayer } from '../context/PlayerContext';
-import { Play, Pause, SkipBack, SkipForward, Loader2, Disc3 } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Loader2, Disc3, Volume2, VolumeX } from 'lucide-react';
 
 export const MiniPlayer: React.FC = () => {
   const {
@@ -9,6 +9,10 @@ export const MiniPlayer: React.FC = () => {
     isBuffering,
     currentTime,
     duration,
+    volume,
+    isMuted,
+    setVolume,
+    toggleMute,
     togglePlay,
     prevSong,
     nextSong,
@@ -33,7 +37,7 @@ export const MiniPlayer: React.FC = () => {
           />
         </div>
 
-        <div className="flex items-center justify-between p-2.5">
+        <div className="flex items-center justify-between p-2.5 pb-1.5">
           {/* Song info & artwork */}
           <div className="flex items-center space-x-3 min-w-0 pr-3 flex-1">
             <div className="relative w-11 h-11 rounded-xl overflow-hidden shrink-0 bg-zinc-900 border border-white/10">
@@ -106,6 +110,38 @@ export const MiniPlayer: React.FC = () => {
               <SkipForward className="w-4 h-4 fill-current" />
             </button>
           </div>
+        </div>
+
+        {/* Dedicated Volume Slider Row */}
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center space-x-2 px-3 pb-2 pt-0.5 border-t border-white/5"
+        >
+          <button
+            onClick={toggleMute}
+            className="p-1 text-zinc-400 hover:text-white transition-colors shrink-0"
+            aria-label={isMuted ? "Unmute" : "Mute"}
+            title={isMuted ? "Unmute" : "Mute"}
+          >
+            {isMuted || volume === 0 ? (
+              <VolumeX className="w-3.5 h-3.5 text-zinc-400" />
+            ) : (
+              <Volume2 className="w-3.5 h-3.5 text-zinc-300" />
+            )}
+          </button>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.01}
+            value={isMuted ? 0 : volume}
+            onChange={(e) => setVolume(Number(e.target.value))}
+            className="flex-1 h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white focus:outline-none"
+            aria-label="Volume slider"
+          />
+          <span className="text-[11px] font-mono text-zinc-400 shrink-0 w-8 text-right">
+            {Math.round((isMuted ? 0 : volume) * 100)}%
+          </span>
         </div>
       </div>
     </div>

@@ -29,7 +29,7 @@ interface PlayerContextType {
   offlineProgress: { isDownloading: boolean; completed: number; total: number };
   
   // Actions
-  playSong: (song: Song) => void;
+  playSong: (song: Song, customQueue?: Song[]) => void;
   togglePlay: () => void;
   pause: () => void;
   resume: () => void;
@@ -61,7 +61,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [volume, setVolumeState] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [isShuffle, setIsShuffle] = useState(false);
-  const [repeatMode, setRepeatMode] = useState<RepeatMode>('off');
+  const [repeatMode, setRepeatMode] = useState<RepeatMode>('all');
   
   // Offline State
   const [offlineIds, setOfflineIds] = useState<string[]>([]);
@@ -82,6 +82,84 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Synchronized refs to eliminate stale closure bugs during background audio transitions
+  const songsRef = useRef<Song[]>([]);
+  const queueRef = useRef<Song[]>([]);
+  const currentSongRef = useRef<Song | null>(null);
+  const isPlayingRef = useRef(false);
+  const isShuffleRef = useRef(false);
+  const repeatModeRef = useRef<RepeatMode>('all');
+  const isTransitioningRef = useRef(false);
+  const volumeRef = useRef(1);
+  const isMutedRef = useRef(false);
+
+  useEffect(() => { songsRef.current = songs; }, [songs]);
+  useEffect(() => { currentSongRef.current = currentSong; }, [currentSong]);
+  useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
+  useEffect(() => { isShuffleRef.current = isShuffle; }, [isShuffle]);
+  useEffect(() => { repeatModeRef.current = repeatMode; }, [repeatMode]);
+  useEffect(() => { volumeRef.current = volume; }, [volume]);
+  useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
+
+  // Direct track play implementation that manages MediaSession and keeps mobile playback alive
+  const playTrackInternal = (song: Song) => {
+    if (!audioRef.current) return;
+    const audio = audioRef.current;
+
+    currentSongRef.current = song;
+    setCurrentSong(song);
+    setIsBuffering(true);
+
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: song.title,
+        artist: song.artist || 'AI Music',
+        album: song.album || 'AI Collection',
+        artwork: [
+          {
+            src: song.coverUrl || '/icons/icon-192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: song.coverUrl || '/icons/icon-512.png',
+            sizes: '512x512',
+            type: 'image/png'
+          }
+        ]
+      });
+      navigator.mediaSession.playbackState = 'playing';
+    }
+
+    audio.src = song.url;
+    audio.volume = isMutedRef.current ? 0 : volumeRef.current;
+    audio.currentTime = 0;
+    setCurrentTime(0);
+
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          setIsPlaying(true);
+          isPlayingRef.current = true;
+          setIsBuffering(false);
+        })
+        .catch((err) => {
+          console.warn('Playback play() error:', err);
+          setIsBuffering(false);
+          // If browser delayed decode, retry once when enough data is ready
+          const onCanPlayRetry = () => {
+            audio.removeEventListener('canplay', onCanPlayRetry);
+            audio.play().then(() => {
+              setIsPlaying(true);
+              isPlayingRef.current = true;
+            }).catch(console.warn);
+          };
+          audio.addEventListener('canplay', onCanPlayRetry);
+        });
+    }
+  };
+
   // Initialize offline list
   useEffect(() => {
     setOfflineIds(getOfflineSongIds());
@@ -95,16 +173,73 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     const onPlay = () => {
       setIsPlaying(true);
+      isPlayingRef.current = true;
       if ('mediaSession' in navigator) {
         navigator.mediaSession.playbackState = 'playing';
       }
     };
+
     const onPause = () => {
+      // If the audio track ended naturally or is transitioning to the next track,
+      // DO NOT set playbackState to 'paused' on mobile OS, otherwise mobile browsers
+      // revoke background audio permissions before the next song begins!
+      if (isTransitioningRef.current || audio.ended) {
+        return;
+      }
       setIsPlaying(false);
+      isPlayingRef.current = false;
       if ('mediaSession' in navigator) {
         navigator.mediaSession.playbackState = 'paused';
       }
     };
+
+    const onEnded = () => {
+      isTransitioningRef.current = true;
+      const list = queueRef.current.length > 0 ? queueRef.current : songsRef.current;
+      if (list.length === 0) {
+        isTransitioningRef.current = false;
+        return;
+      }
+
+      if (repeatModeRef.current === 'one') {
+        audio.currentTime = 0;
+        audio.play().catch(console.warn);
+        setTimeout(() => {
+          isTransitioningRef.current = false;
+        }, 300);
+        return;
+      }
+
+      const current = currentSongRef.current;
+      const currentIdx = current ? list.findIndex(s => s.id === current.id) : -1;
+
+      let nextIndex = 0;
+      if (isShuffleRef.current) {
+        nextIndex = Math.floor(Math.random() * list.length);
+      } else {
+        if (repeatModeRef.current === 'off' && currentIdx >= list.length - 1) {
+          // Reached end of playlist with repeat disabled
+          setIsPlaying(false);
+          isPlayingRef.current = false;
+          if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'none';
+          }
+          isTransitioningRef.current = false;
+          return;
+        }
+        nextIndex = (currentIdx + 1) % list.length;
+      }
+
+      const nextTrack = list[nextIndex];
+      if (nextTrack) {
+        playTrackInternal(nextTrack);
+      }
+
+      setTimeout(() => {
+        isTransitioningRef.current = false;
+      }, 500);
+    };
+
     const onWaiting = () => setIsBuffering(true);
     const onCanPlay = () => setIsBuffering(false);
     const onTimeUpdate = () => {
@@ -136,10 +271,12 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       console.warn('Audio playback error:', e);
       setIsBuffering(false);
       setIsPlaying(false);
+      isPlayingRef.current = false;
     };
 
     audio.addEventListener('play', onPlay);
     audio.addEventListener('pause', onPause);
+    audio.addEventListener('ended', onEnded);
     audio.addEventListener('waiting', onWaiting);
     audio.addEventListener('canplay', onCanPlay);
     audio.addEventListener('timeupdate', onTimeUpdate);
@@ -150,6 +287,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       audio.pause();
       audio.removeEventListener('play', onPlay);
       audio.removeEventListener('pause', onPause);
+      audio.removeEventListener('ended', onEnded);
       audio.removeEventListener('waiting', onWaiting);
       audio.removeEventListener('canplay', onCanPlay);
       audio.removeEventListener('timeupdate', onTimeUpdate);
@@ -194,11 +332,15 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const currentIndex = currentSong ? songs.findIndex(s => s.id === currentSong.id) : -1;
 
   // Play a specific song (offline-aware, synchronous to prevent mobile autoplay pause)
-  const playSong = useCallback((song: Song) => {
+  const playSong = useCallback((song: Song, customQueue?: Song[]) => {
+    if (customQueue && customQueue.length > 0) {
+      queueRef.current = customQueue;
+    }
+
     if (!audioRef.current) return;
     const audio = audioRef.current;
 
-    if (currentSong?.id === song.id) {
+    if (currentSongRef.current?.id === song.id) {
       if (audio.paused) {
         audio.play().catch(console.warn);
       } else {
@@ -207,23 +349,14 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return;
     }
 
-    setCurrentSong(song);
-    setIsBuffering(true);
-
-    // Directly set audio.src - the PWA Service Worker handles offline range streaming natively
-    audio.src = song.url;
-
-    audio.play().catch((err) => {
-      console.warn('Playback error:', err);
-      setIsBuffering(false);
-      setIsPlaying(false);
-    });
-  }, [currentSong]);
+    playTrackInternal(song);
+  }, []);
 
   const togglePlay = useCallback(() => {
     if (!audioRef.current) return;
-    if (!currentSong && songs.length > 0) {
-      playSong(songs[0]);
+    const list = queueRef.current.length > 0 ? queueRef.current : songsRef.current;
+    if (!currentSongRef.current && list.length > 0) {
+      playSong(list[0]);
       return;
     }
     if (audioRef.current.paused) {
@@ -231,7 +364,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } else {
       audioRef.current.pause();
     }
-  }, [currentSong, songs, playSong]);
+  }, [playSong]);
 
   const pause = useCallback(() => {
     audioRef.current?.pause();
@@ -243,49 +376,36 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Next / Previous logic
   const nextSong = useCallback(() => {
-    if (songs.length === 0) return;
-    if (isShuffle) {
-      const randomIndex = Math.floor(Math.random() * songs.length);
-      playSong(songs[randomIndex]);
+    const list = queueRef.current.length > 0 ? queueRef.current : songsRef.current;
+    if (list.length === 0) return;
+
+    if (isShuffleRef.current) {
+      const randomIndex = Math.floor(Math.random() * list.length);
+      playTrackInternal(list[randomIndex]);
       return;
     }
-    const nextIdx = (currentIndex + 1) % songs.length;
-    playSong(songs[nextIdx]);
-  }, [songs, isShuffle, currentIndex, playSong]);
+
+    const current = currentSongRef.current;
+    const currentIdx = current ? list.findIndex(s => s.id === current.id) : -1;
+    const nextIdx = (currentIdx + 1) % list.length;
+    playTrackInternal(list[nextIdx]);
+  }, []);
 
   const prevSong = useCallback(() => {
-    if (songs.length === 0) return;
+    const list = queueRef.current.length > 0 ? queueRef.current : songsRef.current;
+    if (list.length === 0) return;
+
     if (audioRef.current && audioRef.current.currentTime > 3) {
       audioRef.current.currentTime = 0;
+      setCurrentTime(0);
       return;
     }
-    const prevIdx = (currentIndex - 1 + songs.length) % songs.length;
-    playSong(songs[prevIdx]);
-  }, [songs, currentIndex, playSong]);
 
-  // Handle song ending
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const onEnded = () => {
-      if (repeatMode === 'one') {
-        audio.currentTime = 0;
-        audio.play().catch(console.warn);
-      } else if (repeatMode === 'all') {
-        nextSong();
-      } else {
-        if (currentIndex < songs.length - 1) {
-          nextSong();
-        } else {
-          setIsPlaying(false);
-        }
-      }
-    };
-
-    audio.addEventListener('ended', onEnded);
-    return () => audio.removeEventListener('ended', onEnded);
-  }, [repeatMode, nextSong, currentIndex, songs.length]);
+    const current = currentSongRef.current;
+    const currentIdx = current ? list.findIndex(s => s.id === current.id) : -1;
+    const prevIdx = (currentIdx - 1 + list.length) % list.length;
+    playTrackInternal(list[prevIdx]);
+  }, []);
 
   // Seek
   const seekTo = useCallback((time: number) => {

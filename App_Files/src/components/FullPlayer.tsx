@@ -300,8 +300,12 @@ export const FullPlayer: React.FC = () => {
             step={0.01}
             value={isMuted ? 0 : volume}
             onChange={(e) => setVolume(Number(e.target.value))}
-            className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white focus:outline-none"
+            className="flex-1 h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white focus:outline-none"
+            aria-label="Volume slider"
           />
+          <span className="text-xs font-mono text-zinc-400 w-8 text-right shrink-0">
+            {Math.round((isMuted ? 0 : volume) * 100)}%
+          </span>
         </div>
       </div>
     </div>
