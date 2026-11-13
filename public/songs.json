@@ -10,6 +10,16 @@
     "createdAt": "2026-08-06T15:09:36.097Z"
   },
   {
+    "id": "track-2-mwerk87b",
+    "title": "Castle Dubstep",
+    "artist": "AI Music",
+    "album": "AI Collection",
+    "url": "/audio/Castle%20Dubstep.mp3",
+    "coverUrl": "",
+    "duration": 384,
+    "createdAt": "2026-11-13T09:15:20.484Z"
+  },
+  {
     "id": "track-2-mvmiu2pa",
     "title": "Cat Chaser Groove",
     "artist": "AI Music",
@@ -98,6 +108,16 @@
     "coverUrl": "",
     "duration": 119,
     "createdAt": "2026-09-16T09:23:34.757Z"
+  },
+  {
+    "id": "track-12-mwerk87w",
+    "title": "Matt Richelle Waffles Rabbit",
+    "artist": "AI Music",
+    "album": "AI Collection",
+    "url": "/audio/Matt%20Richelle%20Waffles%20Rabbit.mp3",
+    "coverUrl": "",
+    "duration": 166,
+    "createdAt": "2026-11-13T09:17:13.195Z"
   },
   {
     "id": "track-9-mvmiu2pb",
