@@ -91,8 +91,46 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const isShuffleRef = useRef(false);
   const repeatModeRef = useRef<RepeatMode>('all');
   const isTransitioningRef = useRef(false);
+  const transitionTimerRef = useRef<number | null>(null);
+  const pendingRetryCleanupRef = useRef<(() => void) | null>(null);
+  const endedFallbackTimerRef = useRef<number | null>(null);
   const volumeRef = useRef(1);
   const isMutedRef = useRef(false);
+
+  const pickRandomIndex = (length: number, excludeIdx: number): number => {
+    if (length <= 1) return 0;
+    let idx = Math.floor(Math.random() * length);
+    if (idx === excludeIdx) {
+      idx = (idx + 1) % length;
+    }
+    return idx;
+  };
+
+  const clearPendingRetry = () => {
+    if (pendingRetryCleanupRef.current) {
+      pendingRetryCleanupRef.current();
+      pendingRetryCleanupRef.current = null;
+    }
+  };
+
+  const beginTransition = () => {
+    isTransitioningRef.current = true;
+    if (transitionTimerRef.current !== null) {
+      window.clearTimeout(transitionTimerRef.current);
+    }
+    transitionTimerRef.current = window.setTimeout(() => {
+      isTransitioningRef.current = false;
+      transitionTimerRef.current = null;
+    }, 2000);
+  };
+
+  const endTransition = () => {
+    isTransitioningRef.current = false;
+    if (transitionTimerRef.current !== null) {
+      window.clearTimeout(transitionTimerRef.current);
+      transitionTimerRef.current = null;
+    }
+  };
 
   useEffect(() => { songsRef.current = songs; }, [songs]);
   useEffect(() => { currentSongRef.current = currentSong; }, [currentSong]);
@@ -107,11 +145,18 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (!audioRef.current) return;
     const audio = audioRef.current;
 
+    clearPendingRetry();
+    if (endedFallbackTimerRef.current !== null) {
+      window.clearTimeout(endedFallbackTimerRef.current);
+      endedFallbackTimerRef.current = null;
+    }
+
     // Protect against transient 'pause' event emitted when swapping audio.src
-    isTransitioningRef.current = true;
+    beginTransition();
     currentSongRef.current = song;
     setCurrentSong(song);
     setIsBuffering(true);
+    setCurrentTime(0);
 
     if ('mediaSession' in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata({
@@ -136,8 +181,6 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     audio.src = song.url;
     audio.volume = isMutedRef.current ? 0 : volumeRef.current;
-    audio.currentTime = 0;
-    setCurrentTime(0);
 
     const playPromise = audio.play();
     if (playPromise !== undefined) {
@@ -146,26 +189,47 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           setIsPlaying(true);
           isPlayingRef.current = true;
           setIsBuffering(false);
-          isTransitioningRef.current = false;
+          endTransition();
         })
         .catch((err) => {
           console.warn('Playback play() error:', err);
+          if (err?.name === 'AbortError') {
+            // Interrupted by a newer play request; let the newer request own state
+            return;
+          }
           setIsBuffering(false);
-          // If browser delayed decode, retry once when enough data is ready
-          const onCanPlayRetry = () => {
-            audio.removeEventListener('canplay', onCanPlayRetry);
+
+          const attemptRetryPlay = () => {
+            clearPendingRetry();
+            if (currentSongRef.current?.id !== song.id) return;
             audio.play().then(() => {
               setIsPlaying(true);
               isPlayingRef.current = true;
-              isTransitioningRef.current = false;
-            }).catch(() => {
-              isTransitioningRef.current = false;
+              setIsBuffering(false);
+              endTransition();
+            }).catch((retryErr) => {
+              console.warn('Retry play() failed:', retryErr);
+              setIsPlaying(false);
+              isPlayingRef.current = false;
+              endTransition();
+              if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'paused';
+              }
             });
           };
-          audio.addEventListener('canplay', onCanPlayRetry);
+
+          if (audio.readyState >= 3) {
+            attemptRetryPlay();
+          } else {
+            const onCanPlayRetry = () => attemptRetryPlay();
+            audio.addEventListener('canplay', onCanPlayRetry);
+            pendingRetryCleanupRef.current = () => {
+              audio.removeEventListener('canplay', onCanPlayRetry);
+            };
+          }
         });
     } else {
-      setTimeout(() => { isTransitioningRef.current = false; }, 300);
+      endTransition();
     }
   };
 
@@ -178,11 +242,64 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Initialize Audio instance
   useEffect(() => {
     const audio = new Audio();
-    audio.preload = 'metadata';
+    audio.preload = 'auto';
     audioRef.current = audio;
 
+    const handleTrackEnded = () => {
+      if (endedFallbackTimerRef.current !== null) {
+        window.clearTimeout(endedFallbackTimerRef.current);
+        endedFallbackTimerRef.current = null;
+      }
+      beginTransition();
+      const list = queueRef.current.length > 0 ? queueRef.current : songsRef.current;
+      if (list.length === 0) {
+        endTransition();
+        return;
+      }
+
+      if (repeatModeRef.current === 'one') {
+        audio.currentTime = 0;
+        audio.play().then(() => endTransition()).catch((err) => {
+          console.warn('Repeat one play() error:', err);
+          endTransition();
+        });
+        return;
+      }
+
+      const current = currentSongRef.current;
+      const currentIdx = current ? list.findIndex(s => s.id === current.id) : -1;
+
+      let nextIndex = 0;
+      if (isShuffleRef.current) {
+        nextIndex = pickRandomIndex(list.length, currentIdx);
+      } else {
+        if (repeatModeRef.current === 'off' && currentIdx >= list.length - 1) {
+          // Reached end of playlist with repeat disabled
+          setIsPlaying(false);
+          isPlayingRef.current = false;
+          if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'none';
+          }
+          endTransition();
+          return;
+        }
+        nextIndex = (currentIdx + 1) % list.length;
+      }
+
+      const nextTrack = list[nextIndex];
+      if (nextTrack) {
+        playTrackInternal(nextTrack);
+      } else {
+        endTransition();
+      }
+    };
+
     const onPlay = () => {
-      isTransitioningRef.current = false;
+      if (endedFallbackTimerRef.current !== null) {
+        window.clearTimeout(endedFallbackTimerRef.current);
+        endedFallbackTimerRef.current = null;
+      }
+      endTransition();
       setIsPlaying(true);
       isPlayingRef.current = true;
       if ('mediaSession' in navigator) {
@@ -191,10 +308,21 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
 
     const onPause = () => {
-      // If the audio track ended naturally or is transitioning to the next track,
-      // DO NOT set playbackState to 'paused' on mobile OS, otherwise mobile browsers
-      // revoke background audio permissions before the next song begins!
-      if (isTransitioningRef.current || audio.ended) {
+      // If the audio track ended naturally, ensure track advance runs even if a mobile browser drops 'ended'
+      if (audio.ended && !isTransitioningRef.current) {
+        if (endedFallbackTimerRef.current === null) {
+          endedFallbackTimerRef.current = window.setTimeout(() => {
+            endedFallbackTimerRef.current = null;
+            if (audio.ended && !isTransitioningRef.current) {
+              handleTrackEnded();
+            }
+          }, 250);
+        }
+        return;
+      }
+
+      // If we are transitioning to the next track, DO NOT set playbackState to 'paused' on mobile OS!
+      if (isTransitioningRef.current) {
         return;
       }
       setIsPlaying(false);
@@ -205,50 +333,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
 
     const onEnded = () => {
-      isTransitioningRef.current = true;
-      const list = queueRef.current.length > 0 ? queueRef.current : songsRef.current;
-      if (list.length === 0) {
-        isTransitioningRef.current = false;
-        return;
-      }
-
-      if (repeatModeRef.current === 'one') {
-        audio.currentTime = 0;
-        audio.play().catch(console.warn);
-        setTimeout(() => {
-          isTransitioningRef.current = false;
-        }, 300);
-        return;
-      }
-
-      const current = currentSongRef.current;
-      const currentIdx = current ? list.findIndex(s => s.id === current.id) : -1;
-
-      let nextIndex = 0;
-      if (isShuffleRef.current) {
-        nextIndex = Math.floor(Math.random() * list.length);
-      } else {
-        if (repeatModeRef.current === 'off' && currentIdx >= list.length - 1) {
-          // Reached end of playlist with repeat disabled
-          setIsPlaying(false);
-          isPlayingRef.current = false;
-          if ('mediaSession' in navigator) {
-            navigator.mediaSession.playbackState = 'none';
-          }
-          isTransitioningRef.current = false;
-          return;
-        }
-        nextIndex = (currentIdx + 1) % list.length;
-      }
-
-      const nextTrack = list[nextIndex];
-      if (nextTrack) {
-        playTrackInternal(nextTrack);
-      }
-
-      setTimeout(() => {
-        isTransitioningRef.current = false;
-      }, 500);
+      handleTrackEnded();
     };
 
     const onWaiting = () => setIsBuffering(true);
@@ -280,6 +365,12 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     const onError = (e: any) => {
       console.warn('Audio playback error:', e);
+      clearPendingRetry();
+      if (endedFallbackTimerRef.current !== null) {
+        window.clearTimeout(endedFallbackTimerRef.current);
+        endedFallbackTimerRef.current = null;
+      }
+      endTransition();
       setIsBuffering(false);
       setIsPlaying(false);
       isPlayingRef.current = false;
@@ -295,6 +386,15 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     audio.addEventListener('error', onError);
 
     return () => {
+      clearPendingRetry();
+      if (endedFallbackTimerRef.current !== null) {
+        window.clearTimeout(endedFallbackTimerRef.current);
+        endedFallbackTimerRef.current = null;
+      }
+      if (transitionTimerRef.current !== null) {
+        window.clearTimeout(transitionTimerRef.current);
+        transitionTimerRef.current = null;
+      }
       audio.pause();
       audio.removeEventListener('play', onPlay);
       audio.removeEventListener('pause', onPause);
@@ -342,6 +442,36 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Current index in list
   const currentIndex = currentSong ? songs.findIndex(s => s.id === currentSong.id) : -1;
 
+  const resumeOrReloadTrack = useCallback((song: Song) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    // If the media element has not loaded yet, errored, or already ended, reload cleanly
+    if (!audio.src || audio.error || audio.readyState === 0 || audio.ended) {
+      playTrackInternal(song);
+      return;
+    }
+
+    beginTransition();
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          setIsPlaying(true);
+          isPlayingRef.current = true;
+          setIsBuffering(false);
+          endTransition();
+        })
+        .catch((err) => {
+          console.warn('Resume play() error, reloading track:', err);
+          if (err?.name === 'AbortError') return;
+          playTrackInternal(song);
+        });
+    } else {
+      endTransition();
+    }
+  }, []);
+
   // Play a specific song (offline-aware, synchronous to prevent mobile autoplay pause)
   const playSong = useCallback((song: Song, customQueue?: Song[]) => {
     if (customQueue && customQueue.length > 0) {
@@ -352,8 +482,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const audio = audioRef.current;
 
     if (currentSongRef.current?.id === song.id) {
-      if (audio.paused) {
-        audio.play().catch(console.warn);
+      if (audio.paused || audio.ended || !isPlayingRef.current) {
+        resumeOrReloadTrack(song);
       } else {
         audio.pause();
       }
@@ -361,43 +491,54 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     playTrackInternal(song);
-  }, []);
+  }, [resumeOrReloadTrack]);
 
   const togglePlay = useCallback(() => {
     if (!audioRef.current) return;
     const list = queueRef.current.length > 0 ? queueRef.current : songsRef.current;
-    if (!currentSongRef.current && list.length > 0) {
-      playSong(list[0]);
+    const current = currentSongRef.current;
+    if (!current) {
+      if (list.length > 0) {
+        playSong(list[0]);
+      }
       return;
     }
-    if (audioRef.current.paused) {
-      audioRef.current.play().catch(console.warn);
+    if (audioRef.current.paused || audioRef.current.ended || !isPlayingRef.current) {
+      resumeOrReloadTrack(current);
     } else {
       audioRef.current.pause();
     }
-  }, [playSong]);
+  }, [playSong, resumeOrReloadTrack]);
 
   const pause = useCallback(() => {
     audioRef.current?.pause();
   }, []);
 
   const resume = useCallback(() => {
-    audioRef.current?.play().catch(console.warn);
-  }, []);
+    const current = currentSongRef.current;
+    if (current) {
+      resumeOrReloadTrack(current);
+      return;
+    }
+    const list = queueRef.current.length > 0 ? queueRef.current : songsRef.current;
+    if (list.length > 0) {
+      playTrackInternal(list[0]);
+    }
+  }, [resumeOrReloadTrack]);
 
   // Next / Previous logic
   const nextSong = useCallback(() => {
     const list = queueRef.current.length > 0 ? queueRef.current : songsRef.current;
     if (list.length === 0) return;
 
+    const current = currentSongRef.current;
+    const currentIdx = current ? list.findIndex(s => s.id === current.id) : -1;
+
     if (isShuffleRef.current) {
-      const randomIndex = Math.floor(Math.random() * list.length);
-      playTrackInternal(list[randomIndex]);
+      playTrackInternal(list[pickRandomIndex(list.length, currentIdx)]);
       return;
     }
 
-    const current = currentSongRef.current;
-    const currentIdx = current ? list.findIndex(s => s.id === current.id) : -1;
     const nextIdx = (currentIdx + 1) % list.length;
     playTrackInternal(list[nextIdx]);
   }, []);
