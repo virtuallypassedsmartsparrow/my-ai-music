@@ -51,32 +51,74 @@ if (fs.existsSync(addMusicDir)) {
   }
 }
 
-// Helper to calculate MP3 duration from file size and frame bitrate
+// Accurate MPEG Audio frame parser with Xing / Info / VBRI header support
+const sampleRates = {
+  3: [44100, 48000, 32000], // MPEG 1
+  2: [22050, 24000, 16000], // MPEG 2
+  0: [11025, 12000, 8000]   // MPEG 2.5
+};
+
+const bitratesMPEG1Layer3 = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320];
+
 function estimateMp3Duration(filePath) {
   try {
     const stats = fs.statSync(filePath);
     const size = stats.size;
     const fd = fs.openSync(filePath, 'r');
-    const buffer = Buffer.alloc(8192);
-    fs.readSync(fd, buffer, 0, 8192, 0);
+    const bufSize = Math.min(size, 65536);
+    const buffer = Buffer.alloc(bufSize);
+    fs.readSync(fd, buffer, 0, bufSize, 0);
     fs.closeSync(fd);
 
-    const bitrates = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320];
+    // Skip ID3v2 header if present so we start at actual MPEG frames
+    let offset = 0;
+    if (buffer.toString('utf8', 0, 3) === 'ID3') {
+      const tagSize = ((buffer[6] & 0x7f) << 21) | ((buffer[7] & 0x7f) << 14) | ((buffer[8] & 0x7f) << 7) | (buffer[9] & 0x7f);
+      offset = tagSize + 10;
+    }
 
-    for (let i = 0; i < buffer.length - 4; i++) {
+    for (let i = offset; i < buffer.length - 4; i++) {
       if (buffer[i] === 0xff && (buffer[i + 1] & 0xe0) === 0xe0) {
         const version = (buffer[i + 1] >> 3) & 0x3;
         const layer = (buffer[i + 1] >> 1) & 0x3;
         const bitrateIdx = (buffer[i + 2] >> 4) & 0xf;
+        const srIdx = (buffer[i + 2] >> 2) & 0x3;
 
-        if (version === 3 && layer === 1 && bitrateIdx > 0 && bitrateIdx < 15) {
-          const kbps = bitrates[bitrateIdx];
-          const dur = (size * 8) / (kbps * 1000);
-          return Math.round(dur);
+        if (version === 3 && layer === 1 && bitrateIdx > 0 && bitrateIdx < 15 && srIdx < 3) {
+          const sampleRate = sampleRates[version][srIdx];
+          const frameChunk = buffer.subarray(i, Math.min(i + 250, buffer.length));
+          const str = frameChunk.toString('latin1');
+
+          // 1. Check for Xing or Info header (used by LAME and modern encoders for VBR/CBR total frame count)
+          let xingIdx = str.indexOf('Xing');
+          if (xingIdx === -1) xingIdx = str.indexOf('Info');
+          if (xingIdx !== -1 && xingIdx + 12 <= frameChunk.length) {
+            const flags = frameChunk.readUInt32BE(xingIdx + 4);
+            if (flags & 0x1) { // Frames flag is present
+              const frames = frameChunk.readUInt32BE(xingIdx + 8);
+              if (frames > 0) {
+                return Math.round((frames * 1152) / sampleRate);
+              }
+            }
+          }
+
+          // 2. Check for Fraunhofer VBRI header
+          let vbriIdx = str.indexOf('VBRI');
+          if (vbriIdx !== -1 && vbriIdx + 18 <= frameChunk.length) {
+            const frames = frameChunk.readUInt32BE(vbriIdx + 14);
+            if (frames > 0) {
+              return Math.round((frames * 1152) / sampleRate);
+            }
+          }
+
+          // 3. Fallback to CBR bitrate estimation using pure audio payload size
+          const kbps = bitratesMPEG1Layer3[bitrateIdx];
+          const audioBytes = Math.max(size - offset, 0);
+          return Math.round((audioBytes * 8) / (kbps * 1000));
         }
       }
     }
-    // Default estimate assuming 192 kbps
+    // Default fallback assuming 192 kbps
     return Math.round((size * 8) / (192 * 1000));
   } catch {
     return 0;
@@ -119,7 +161,8 @@ const songs = validFiles.map((file, idx) => {
     .trim();
 
   const existing = existingMap.get(url);
-  const duration = existing?.duration > 0 ? existing.duration : estimateMp3Duration(filePath);
+  const calculatedDuration = estimateMp3Duration(filePath);
+  const duration = calculatedDuration > 0 ? calculatedDuration : (existing?.duration || 0);
 
   return {
     id: existing?.id || `track-${idx + 1}-${Date.now().toString(36)}`,
